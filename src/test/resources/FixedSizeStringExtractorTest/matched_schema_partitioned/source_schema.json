@@ -1,0 +1,19 @@
+{
+  "type" : "struct",
+  "fields" : [ {
+    "name" : "value",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "year",
+    "type" : "short",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "month",
+    "type" : "short",
+    "nullable" : true,
+    "metadata" : { }
+  } ]
+}

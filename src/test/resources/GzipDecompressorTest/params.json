@@ -1,0 +1,5 @@
+{
+  "directory": "/tmp/tests/test_landing/bi/test_data_table/data",
+  "format": "csv",
+  "thread_pool_size": 8
+}

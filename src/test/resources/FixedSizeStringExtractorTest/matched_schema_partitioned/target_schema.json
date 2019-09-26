@@ -1,0 +1,59 @@
+{
+  "type" : "struct",
+  "fields" : [ {
+    "name" : "id",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "latitude",
+    "type" : "double",
+    "nullable" : false,
+    "metadata" : { }
+  }, {
+    "name" : "longitude",
+    "type" : "double",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "elevation",
+    "type" : "double",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "state",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "name",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "gsn_flag",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "hcn_crn_flag",
+    "type" : "short",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "wmo_id",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "year",
+    "type" : "short",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "month",
+    "type" : "short",
+    "nullable" : true,
+    "metadata" : { }
+  } ]
+}

@@ -1,0 +1,44 @@
+{
+  "type" : "struct",
+  "fields" : [ {
+    "name" : "salesorder",
+    "type" : "integer",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "item",
+    "type" : "integer",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "recordmode",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "date",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "customer",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "year",
+    "type" : "short",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "month",
+    "type" : "short",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "day",
+    "type" : "short",
+    "nullable" : true,
+    "metadata" : { }
+  } ]
+}

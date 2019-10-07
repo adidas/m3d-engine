@@ -44,5 +44,19 @@ object DataFormat {
       writer.csv(location)
     }
   }
+
+  case class JSONFormat(optionalSchema: Option[StructType] = None) extends DataFormat {
+
+    override def read(reader: DataFrameReader, locations: String*): DataFrame = {
+      val filesString = locations.mkString(", ")
+      logger.info(s"Reading JSON data from $filesString")
+      optionalSchema.fold(reader.option("inferSchema", "true"))(schema => reader.schema(schema)).json(locations: _*)
+    }
+
+    override def write(writer: DataFrameWriter[Row], location: String): Unit = {
+      logger.info(s"Writing JSON data to $location")
+      writer.json(location)
+    }
+  }
 }
 

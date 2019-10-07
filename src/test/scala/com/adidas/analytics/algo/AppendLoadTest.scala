@@ -418,6 +418,6 @@ class AppendLoadTest extends FeatureSpec with BaseAlgorithmTest {
 
   private def setupInitialState(targetTable: Table, localDataFile: String, dataReader: FileReader): Unit = {
     val initialDataLocation = resolveResource(localDataFile, withProtocol = true)
-    targetTable.write(Seq(initialDataLocation), dataReader, LoadMode.OverwritePartitions)
+    targetTable.write(Seq(initialDataLocation), dataReader, LoadMode.OverwritePartitionsWithAddedColumns)
   }
 }

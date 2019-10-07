@@ -49,7 +49,7 @@ object DeltaLoadConfiguration {
       table = activeRecordsTable,
       format = ParquetFormat(Some(targetSchema)),
       partitionColumns = partitionColumns,
-      loadMode = LoadMode.OverwritePartitions
+      loadMode = LoadMode.OverwritePartitionsWithAddedColumns
     )
   }
 

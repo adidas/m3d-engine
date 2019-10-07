@@ -16,6 +16,10 @@ object LoadMode {
     override val sparkMode: SaveMode = SaveMode.Overwrite
   }
 
+  case object OverwritePartitionsWithAddedColumns extends LoadMode {
+    override val sparkMode: SaveMode = SaveMode.Overwrite
+  }
+
   case object AppendJoinPartitions extends LoadMode {
     override def sparkMode: SaveMode = SaveMode.Append
   }

@@ -60,7 +60,7 @@ trait FixedSizeStringExtractorConfiguration extends ConfigurationContext with Re
     table = targetTable,
     format = ParquetFormat(Some(targetSchema)),
     partitionColumns = partitionColumnsOrdered,
-    loadMode = if (partitionColumnsOrdered.nonEmpty) LoadMode.OverwritePartitions else LoadMode.OverwriteTable
+    loadMode = if (partitionColumnsOrdered.nonEmpty) LoadMode.OverwritePartitionsWithAddedColumns else LoadMode.OverwriteTable
   )
 }
 

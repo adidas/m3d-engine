@@ -1,0 +1,6 @@
+{"salesorder": 4, "item": 100, "recordmode": "N", "date": 20180104, "customer": "customer1", "article": "article1", "amount": 2}
+{"salesorder": 4, "item": 100, "recordmode": "N", "date": 20180104, "customer": "customer2", "article": "article1", "amount": 1}
+{"salesorder": 4, "item": 100, "recordmode": "N", "date": 20180104, "customer": "customer3", "article": "article2", "amount": 1}
+{"salesorder": 4, "item": 100, "recordmode": "N", "date": 20180104, "customer": "customer4", "article": "article5", "amount": 3}
+{"salesorder": 4, "item": 100, "recordmode": "N", "date": 20180104, "customer": "customer5", "article": "article1", "amount": 1}
+{"salesorder": 4, "item": 100, "recordmode": "N", "date": 20180104, "customer": "customer6", "article": "article6", "amount": 6}

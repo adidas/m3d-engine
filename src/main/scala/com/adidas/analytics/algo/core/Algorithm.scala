@@ -141,6 +141,9 @@ object Algorithm {
 
     protected def spark: SparkSession
 
-    protected def computeStatisticsForTable(tableName: String): Unit = spark.sql(s"ANALYZE TABLE $tableName COMPUTE STATISTICS")
+    protected def computeStatisticsForTable(tableName: Option[String]): Unit = {
+      if (tableName.isDefined)
+        spark.sql(s"ANALYZE TABLE ${tableName.get} COMPUTE STATISTICS")
+    }
   }
 }

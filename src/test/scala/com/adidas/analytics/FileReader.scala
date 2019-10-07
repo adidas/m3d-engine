@@ -1,7 +1,7 @@
 package com.adidas.analytics
 
 import com.adidas.analytics.util.DataFormat
-import com.adidas.analytics.util.DataFormat.{DSVFormat, ParquetFormat}
+import com.adidas.analytics.util.DataFormat.{DSVFormat, JSONFormat, ParquetFormat}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -32,6 +32,10 @@ object FileReader {
 
   def newParquetFileReader(): FileReader = {
     new FileReader(ParquetFormat(), Map.empty[String, String])
+  }
+
+  def newJsonFileReader(optionalSchema: Option[StructType] = None): FileReader = {
+      new FileReader(JSONFormat(optionalSchema), Map.empty[String, String])
   }
 
   def apply(format: DataFormat, options: (String, String)*): FileReader = {

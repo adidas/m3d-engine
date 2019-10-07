@@ -1,0 +1,5 @@
+{"salesorder": 1, "item": 100, "recordmode": "N", "date": 20180101, "customer": "customer1", "article": "article1", "amount": 2, "city": "Berlin", "year": 2018, "month": 1, "day": 1}
+{"salesorder": 1, "item": 100, "recordmode": "N", "date": 20180101, "customer": "customer2", "article": "article1", "amount": 1, "city": "Berlin", "year": 2018, "month": 1, "day": 1}
+{"salesorder": 1, "item": 100, "recordmode": "N", "date": 20180101, "customer": "customer3", "article": "article2", "amount": 1, "city": "Berlin", "year": 2018, "month": 1, "day": 1}
+{"salesorder": 1, "item": 100, "recordmode": "N", "date": 20180101, "customer": "customer4", "article": "article5", "amount": 3, "city": "Berlin", "year": 2018, "month": 1, "day": 1}
+{"salesorder": 1, "item": 100, "recordmode": "N", "date": 20180101, "customer": "customer5", "article": "article1", "amount": 1, "city": "Berlin", "year": 2018, "month": 1, "day": 1}

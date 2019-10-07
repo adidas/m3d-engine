@@ -171,7 +171,7 @@ class DeltaLoadTest extends FeatureSpec with BaseAlgorithmTest {
         tableBuilder.buildDSVTable(DFSWrapper(fs.getConf), spark, external = true)
       }
 
-      table.write(Seq(dataLocation), dsvReader, LoadMode.OverwritePartitions, fillNulls = true)
+      table.write(Seq(dataLocation), dsvReader, LoadMode.OverwritePartitionsWithAddedColumns, fillNulls = true)
       table
     }
 
@@ -197,7 +197,7 @@ class DeltaLoadTest extends FeatureSpec with BaseAlgorithmTest {
     dsvFileName match {
       case Some(fileName) =>
         val dataLocation = resolveResource(s"$testResourceDir/$fileName", withProtocol = true)
-        table.write(Seq(dataLocation), dsvReader, LoadMode.OverwritePartitions, fillNulls = true)
+        table.write(Seq(dataLocation), dsvReader, LoadMode.OverwritePartitionsWithAddedColumns, fillNulls = true)
         table
       case None => table
     }

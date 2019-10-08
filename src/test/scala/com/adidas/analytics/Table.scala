@@ -136,6 +136,8 @@ object Table {
           statementBuilder += s"FIELDS TERMINATED BY '$delimiter'"
         case _: DataFormat.ParquetFormat =>
           statementBuilder += "STORED AS PARQUET"
+        case anotherFormat =>  throw new RuntimeException(s"Unknown file format: $anotherFormat")
+
       }
 
       statementBuilder += s"LOCATION '$location'"

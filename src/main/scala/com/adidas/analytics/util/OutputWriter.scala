@@ -40,7 +40,7 @@ object OutputWriter {
     * @return TableWriter
     */
   def newTableWriter(table: String, partitionColumns: Seq[String] = Seq.empty, options: Map[String, String] = Map.empty,
-                     loadMode: LoadMode = LoadMode.OverwritePartitions): TableWriter = {
+                     loadMode: LoadMode = LoadMode.OverwritePartitionsWithAddedColumns): TableWriter = {
     TableWriter(table, partitionColumns, options, loadMode)
   }
 
@@ -55,7 +55,7 @@ object OutputWriter {
     * @return TableLocationWriter
     */
   def newTableLocationWriter(table: String, format: DataFormat, partitionColumns: Seq[String] = Seq.empty,
-                             options: Map[String, String] = Map.empty, loadMode: LoadMode = LoadMode.OverwritePartitions): TableLocationWriter = {
+                             options: Map[String, String] = Map.empty, loadMode: LoadMode = LoadMode.OverwritePartitionsWithAddedColumns): TableLocationWriter = {
     TableLocationWriter(table, format, partitionColumns, options, loadMode)
   }
 
@@ -70,7 +70,7 @@ object OutputWriter {
     * @return FileSystemWriter
     */
   def newFileSystemWriter(location: String, format: DataFormat, partitionColumns: Seq[String] = Seq.empty,
-                          options: Map[String, String] = Map.empty, loadMode: LoadMode = LoadMode.OverwritePartitions): FileSystemWriter = {
+                          options: Map[String, String] = Map.empty, loadMode: LoadMode = LoadMode.OverwritePartitionsWithAddedColumns): FileSystemWriter = {
     FileSystemWriter(location, format, partitionColumns, options, loadMode)
   }
 
@@ -114,6 +114,8 @@ object OutputWriter {
         case LoadMode.OverwriteTable =>
           loadTable(fs, df, finalPath, tempDataPath, tempBackupPath)
         case LoadMode.OverwritePartitions =>
+          loadPartitions(fs, df, finalPath, tempDataPath, tempBackupPath, partitionsCriteria)
+        case LoadMode.OverwritePartitionsWithAddedColumns =>
           val existingDf = format.read(df.sparkSession.read, finalLocation)
           val outputDf = df.addMissingColumns(existingDf.schema)
           loadPartitions(fs, outputDf, finalPath, tempDataPath, tempBackupPath, partitionsCriteria)
@@ -162,7 +164,7 @@ object OutputWriter {
     private def loadPartitions(fs: FileSystem, df: DataFrame, finalPath: Path, dataPath: Path, backupPath: Path,
                                partitionsCriteria: Seq[Seq[(String, String)]]): Unit = {
       if (partitionsCriteria.nonEmpty) {
-        write(fs, df, dataPath, LoadMode.OverwritePartitions)
+        write(fs, df, dataPath, LoadMode.OverwritePartitionsWithAddedColumns)
 
         logger.info(s"Creating backup in $backupPath")
         val backupSpecs = HadoopLoadHelper.createMoveSpecs(fs, finalPath, backupPath, partitionsCriteria)

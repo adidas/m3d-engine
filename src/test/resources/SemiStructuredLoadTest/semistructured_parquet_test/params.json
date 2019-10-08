@@ -1,0 +1,73 @@
+{
+  "target_dir": "/tmp/tests/test_lake/test_table_semistructured/data",
+  "source_dir": "/tmp/tests/test_landing/test_table_semistructured/data",
+  "header_dir": "/tmp/tests/test_landing/test_table_semistructured/header",
+  "delimiter": "|",
+  "file_format": "parquet",
+  "has_header": true,
+  "regex_filename": [
+    "year=([0-9]{4})(?=/month=[0-9]{2}/day=[0-9]{2})",
+    "(?<=year=[0-9]{4})/month=([0-9]{2})/(?=day=[0-9]{2})",
+    "(?<=year=[0-9]{4}/month=[0-9]{2})/day=([0-9]{2})"
+  ],
+  "partition_columns": [
+    "year",
+    "month",
+    "day"
+  ],
+  "data_type": "semistructured",
+  "schema": {
+    "type" : "struct",
+    "fields" : [ {
+      "name" : "salesorder",
+      "type" : "integer",
+      "nullable" : true,
+      "metadata" : { }
+    }, {
+      "name" : "item",
+      "type" : "integer",
+      "nullable" : true,
+      "metadata" : { }
+    }, {
+      "name" : "recordmode",
+      "type" : "string",
+      "nullable" : true,
+      "metadata" : { }
+    }, {
+      "name" : "date",
+      "type" : "integer",
+      "nullable" : true,
+      "metadata" : { }
+    }, {
+      "name" : "customer",
+      "type" : "string",
+      "nullable" : true,
+      "metadata" : { }
+    }, {
+      "name" : "article",
+      "type" : "string",
+      "nullable" : true,
+      "metadata" : { }
+    }, {
+      "name" : "amount",
+      "type" : "integer",
+      "nullable" : true,
+      "metadata" : { }
+    }, {
+      "name" : "year",
+      "type" : "short",
+      "nullable" : true,
+      "metadata" : { }
+    }, {
+      "name" : "month",
+      "type" : "short",
+      "nullable" : true,
+      "metadata" : { }
+    }, {
+      "name" : "day",
+      "type" : "short",
+      "nullable" : true,
+      "metadata" : { }
+    } ]
+  }
+}

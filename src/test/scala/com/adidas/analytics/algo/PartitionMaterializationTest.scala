@@ -73,7 +73,7 @@ class PartitionMaterializationTest extends FeatureSpec with BaseAlgorithmTest {
       copyResourceFileToHdfs(s"$testDir/$paramsFileName", paramsFileHdfsPath)
 
       // adding data to target table
-      targetTable.write(Seq(getInitialDataFile(testDir)), fileReader, LoadMode.OverwritePartitions)
+      targetTable.write(Seq(getInitialDataFile(testDir)), fileReader, LoadMode.OverwritePartitionsWithAddedColumns)
 
       // check pre-conditions
       sourceTable.read().count() shouldBe 19
@@ -115,7 +115,7 @@ class PartitionMaterializationTest extends FeatureSpec with BaseAlgorithmTest {
       copyResourceFileToHdfs(s"$testDir/$paramsFileName", paramsFileHdfsPath)
 
       // add data to target table
-      targetTable.write(Seq(Seq(9999, 1111, "", 20170215, "CUSTOMER99", "ARTICLE", 99, 2017, 2, 15)), LoadMode.OverwritePartitions)
+      targetTable.write(Seq(Seq(9999, 1111, "", 20170215, "CUSTOMER99", "ARTICLE", 99, 2017, 2, 15)), LoadMode.OverwritePartitionsWithAddedColumns)
 
       // checking pre-conditions
       sourceTable.read().count() shouldBe 19
@@ -140,7 +140,7 @@ class PartitionMaterializationTest extends FeatureSpec with BaseAlgorithmTest {
       copyResourceFileToHdfs(s"$testDir/$paramsFileName", paramsFileHdfsPath)
 
       // adding data to target table
-      targetTable.write(Seq(getInitialDataFile(testDir)), fileReader, LoadMode.OverwritePartitions)
+      targetTable.write(Seq(getInitialDataFile(testDir)), fileReader, LoadMode.OverwritePartitionsWithAddedColumns)
 
       // check pre-conditions
       sourceTable.read().count() shouldBe 19
@@ -220,7 +220,7 @@ class PartitionMaterializationTest extends FeatureSpec with BaseAlgorithmTest {
       copyResourceFileToHdfs(s"$testDir/$paramsFileName", paramsFileHdfsPath)
 
       // add data to target table
-      targetTable.write(Seq(Seq(9999, 1111, "", 20170215, "CUSTOMER99", "ARTICLE", 99, 2017, 2, 15)), LoadMode.OverwritePartitions)
+      targetTable.write(Seq(Seq(9999, 1111, "", 20170215, "CUSTOMER99", "ARTICLE", 99, 2017, 2, 15)), LoadMode.OverwritePartitionsWithAddedColumns)
 
       // checking pre-conditions
       sourceTable.read().count() shouldBe 19
@@ -245,7 +245,7 @@ class PartitionMaterializationTest extends FeatureSpec with BaseAlgorithmTest {
       copyResourceFileToHdfs(s"$testDir/$paramsFileName", paramsFileHdfsPath)
 
       // adding data to target table
-      targetTable.write(Seq(getInitialDataFile(testDir)), fileReader, LoadMode.OverwritePartitions)
+      targetTable.write(Seq(getInitialDataFile(testDir)), fileReader, LoadMode.OverwritePartitionsWithAddedColumns)
 
       // check pre-conditions
       sourceTable.read().count() shouldBe 19
@@ -277,7 +277,7 @@ class PartitionMaterializationTest extends FeatureSpec with BaseAlgorithmTest {
       copyResourceFileToHdfs(s"output_files_3/$paramsFileName", paramsFileHdfsPath)
 
       // adding data to target table
-      targetTable.write(Seq(getInitialDataFile(testDir)), fileReader, LoadMode.OverwritePartitions)
+      targetTable.write(Seq(getInitialDataFile(testDir)), fileReader, LoadMode.OverwritePartitionsWithAddedColumns)
 
       // check pre-conditions
       sourceTable.read().count() shouldBe 19
@@ -308,7 +308,7 @@ class PartitionMaterializationTest extends FeatureSpec with BaseAlgorithmTest {
       copyResourceFileToHdfs(s"output_files_5/$paramsFileName", paramsFileHdfsPath)
 
       // adding data to target table
-      targetTable.write(Seq(getInitialDataFile(testDir)), fileReader, LoadMode.OverwritePartitions)
+      targetTable.write(Seq(getInitialDataFile(testDir)), fileReader, LoadMode.OverwritePartitionsWithAddedColumns)
 
       // check pre-conditions
       sourceTable.read().count() shouldBe 19
@@ -362,7 +362,7 @@ class PartitionMaterializationTest extends FeatureSpec with BaseAlgorithmTest {
 
     // create source table and add data to it
     sourceTable = createTable("source_table", sourceDatabase, partitions, "source_table_data", schema)
-    sourceTable.write(Seq(getSourceDataFile(testDir)), fileReader, LoadMode.OverwritePartitions)
+    sourceTable.write(Seq(getSourceDataFile(testDir)), fileReader, LoadMode.OverwritePartitionsWithAddedColumns)
 
     // create target table
     targetTable = createTable("target_table", targetDatabase, partitions, "target_table_data", schema)

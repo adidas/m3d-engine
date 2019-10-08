@@ -1,0 +1,17 @@
+{"salesorder": 1, "item": 100, "recordmode": "N", "date": 20180101, "customer": "customer1", "article": "article1", "city": null, "amount": 2, "year": 2018, "month": 1, "day": 1}
+{"salesorder": 1, "item": 100, "recordmode": "N", "date": 20180101, "customer": "customer2", "article": "article1", "city": null, "amount": 1, "year": 2018, "month": 1, "day": 1}
+{"salesorder": 1, "item": 100, "recordmode": "N", "date": 20180101, "customer": "customer3", "article": "article2", "city": null, "amount": 1, "year": 2018, "month": 1, "day": 1}
+{"salesorder": 1, "item": 100, "recordmode": "N", "date": 20180101, "customer": "customer4", "article": "article5", "city": null, "amount": 3, "year": 2018, "month": 1, "day": 1}
+{"salesorder": 1, "item": 100, "recordmode": "N", "date": 20180101, "customer": "customer5", "article": "article1", "city": null, "amount": 1, "year": 2018, "month": 1, "day": 1}
+{"salesorder": 2, "item": 100, "recordmode": "N", "date": 20180102, "customer": "customer1", "article": "article1", "city": null, "amount": 2, "year": 2018, "month": 1, "day": 2}
+{"salesorder": 2, "item": 100, "recordmode": "N", "date": 20180102, "customer": "customer2", "article": "article1", "city": null, "amount": 1, "year": 2018, "month": 1, "day": 2}
+{"salesorder": 2, "item": 100, "recordmode": "N", "date": 20180102, "customer": "customer3", "article": "article2", "city": null, "amount": 1, "year": 2018, "month": 1, "day": 2}
+{"salesorder": 2, "item": 100, "recordmode": "N", "date": 20180102, "customer": "customer4", "article": "article5", "city": null, "amount": 3, "year": 2018, "month": 1, "day": 2}
+{"salesorder": 2, "item": 100, "recordmode": "N", "date": 20180102, "customer": "customer5", "article": "article1", "city": null, "amount": 1, "year": 2018, "month": 1, "day": 2}
+{"salesorder": 2, "item": 100, "recordmode": "N", "date": 20180102, "customer": "customer6", "article": "article6", "city": null, "amount": 6, "year": 2018, "month": 1, "day": 2}
+{"salesorder": 3, "item": 100, "recordmode": "N", "date": 20180103, "customer": "customer1", "article": "article1", "city": "Berlin", "amount": 2, "year": 2018, "month": 1, "day": 3}
+{"salesorder": 3, "item": 100, "recordmode": "N", "date": 20180103, "customer": "customer2", "article": "article1", "city": "Berlin", "amount": 1, "year": 2018, "month": 1, "day": 3}
+{"salesorder": 3, "item": 100, "recordmode": "N", "date": 20180103, "customer": "customer3", "article": "article2", "city": "Berlin", "amount": 1, "year": 2018, "month": 1, "day": 3}
+{"salesorder": 3, "item": 100, "recordmode": "N", "date": 20180103, "customer": "customer4", "article": "article5", "city": "Berlin", "amount": 3, "year": 2018, "month": 1, "day": 3}
+{"salesorder": 3, "item": 100, "recordmode": "N", "date": 20180103, "customer": "customer5", "article": "article1", "city": "Berlin", "amount": 1, "year": 2018, "month": 1, "day": 3}
+{"salesorder": 3, "item": 100, "recordmode": "N", "date": 20180103, "customer": "customer6", "article": "article6", "city": "Berlin", "amount": 6, "year": 2018, "month": 1, "day": 3}

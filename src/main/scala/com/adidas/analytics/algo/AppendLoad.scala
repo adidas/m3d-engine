@@ -7,7 +7,7 @@ import com.adidas.analytics.algo.core.Algorithm
 import com.adidas.analytics.algo.core.Algorithm.ComputeTableStatisticsOperation
 import com.adidas.analytics.config.AppendLoadConfiguration
 import com.adidas.analytics.util.DFSWrapper._
-import com.adidas.analytics.util.DataFormat.{DSVFormat, ParquetFormat}
+import com.adidas.analytics.util.DataFormat.{DSVFormat, JSONFormat, ParquetFormat}
 import com.adidas.analytics.util.DataFrameUtils._
 import com.adidas.analytics.util._
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -33,7 +33,7 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
   override protected def write(dataFrames: Vector[DataFrame]): Unit = {
     writeHeaders(dataFrames, partitionColumns, headerDir, dfs)
     super.write(dataFrames)
-    if (computeTableStatistics)
+    if (computeTableStatistics && dataType == STRUCTURED)
       computeStatisticsForTable(targetTable)
   }
 
@@ -50,14 +50,67 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
     val targetSchemaWithoutPartitionColumns = getSchemaWithoutPartitionColumns(targetSchema, partitionColumns.toSet)
 
     logger.info(s"Looking for input files in $inputDirPath")
-    fs.ls(inputDirPath, recursive = true).groupBy { inputPath =>
+    val groupedHeaderPathAndSourcePaths = fs.ls(inputDirPath, recursive = true).groupBy { inputPath =>
       buildHeaderFilePath(columnToRegexPairs, targetSchema, extractPathWithoutServerAndProtocol(inputPath.toString), headerDirPath)
-    }.flatMap { case (headerPath, sourcePaths) =>
-      val schema = if (fs.exists(headerPath)) loadHeader(headerPath, fs) else targetSchemaWithoutPartitionColumns
-      sourcePaths.map { sourcePath =>
-        Source(schema, sourcePath.toString)
+    }
+
+    def getMapSchemaStructToPath = {
+      val mapSchemaStructToPath = groupedHeaderPathAndSourcePaths.toSeq.map { case (headerPath, sourcePaths) =>
+        getSchemaFromHeaderOrSource(fs, headerPath, sourcePaths, targetSchemaWithoutPartitionColumns)
+      }.groupBy(_._1).map { case (k, v) => (k, v.flatMap(_._2)) }
+
+      val filteredMapSchemaStructToPath = mapSchemaStructToPath.filter(schemaFromInputData => matchingSchemas_?(schemaFromInputData._1, targetSchema, schemaFromInputData._2))
+
+      if (mapSchemaStructToPath.size != filteredMapSchemaStructToPath.size)
+        throw new RuntimeException("Schema does not match the input data for some of the input folders.")
+
+      mapSchemaStructToPath.flatMap { case (schema, sourcePaths) =>
+        sourcePaths.map { sourcePath =>
+          Source(targetSchema, sourcePath.toString)
+        }
       }
-    }.toSeq
+    }
+
+    val schemaAndSourcePath = if(!verifySchema) {
+      groupedHeaderPathAndSourcePaths.flatMap { case (headerPath, sourcePaths) =>
+        val schema = if (fs.exists(headerPath)) loadHeader(headerPath, fs) else targetSchemaWithoutPartitionColumns
+        sourcePaths.map { sourcePath =>
+          Source(schema, sourcePath.toString)
+        }
+      }
+    } else {
+      getMapSchemaStructToPath
+    }
+    schemaAndSourcePath.toSeq
+  }
+
+  private def getSchemaFromHeaderOrSource(fs: FileSystem, headerPath: Path, sourcePaths: Seq[Path], targetSchemaWithoutPartitionColumns: StructType): (StructType, Seq[Path]) ={
+    val schema = if (fs.exists(headerPath)){
+      loadHeader(headerPath, fs) }
+    else {
+      inferSchemaFromSource(sourcePaths)
+    }
+    (schema, sourcePaths)
+  }
+
+  private def inferSchemaFromSource(sourcePaths: Seq[Path]): StructType = {
+    val reader = spark.read.options(sparkReaderOptions)
+    val dataFormat = fileFormat match {
+      case "dsv" => DSVFormat()
+      case "parquet" => ParquetFormat()
+      case "json" => JSONFormat()
+      case anotherFormat => throw new RuntimeException(s"Unknown file format: $anotherFormat")
+    }
+    dataFormat.read(reader, sourcePaths.map(_.toString): _*).schema
+  }
+
+  private def matchingSchemas_?(schemaFromInputData: StructType, targetSchema: StructType, paths: Seq[Path]): Boolean = {
+    val inputColumnsVector =  schemaFromInputData.names.toVector
+    val targetColumnsVector =  targetSchema.names.toVector
+    val diff = inputColumnsVector.diff(targetColumnsVector)
+    if(diff.nonEmpty)
+      logger.error(s"Inferred schema does not match the target schema for ${paths.toString}")
+    diff.isEmpty
   }
 
   private def readSources(sources: Seq[Source], fs: FileSystem, spark: SparkSession): Vector[DataFrame] = {
@@ -70,6 +123,7 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
     fileFormat match {
       case "dsv" => DSVFormat(Some(schema)).read(reader, inputPaths: _*)
       case "parquet" => ParquetFormat(Some(schema)).read(reader, inputPaths: _*)
+      case "json" => JSONFormat(Some(schema)).read(reader, inputPaths: _*)
       case anotherFormat => throw new RuntimeException(s"Unknown file format: $anotherFormat")
     }
   }

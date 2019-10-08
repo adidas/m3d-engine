@@ -64,7 +64,7 @@ trait AlgorithmTemplateConfiguration extends ConfigurationContext with ReadOpera
       table = targetTable,
       format = ParquetFormat (Some (targetSchema) ),
       partitionColumns = Seq ("", "", ""), //If partitions are required, this would look like, e.g., Seq("year", "month")
-      loadMode = LoadMode.OverwritePartitions
+      loadMode = LoadMode.OverwritePartitionsWithAddedColumns
     )
   }
 }

@@ -16,14 +16,20 @@ trait FullLoadConfiguration extends ConfigurationContext with LoadConfiguration 
 
   protected val backupDir: String = configReader.getAs[String]("backup_dir")
 
+  protected val targetTable: String = configReader.getAs[String]("target_table")
+
   protected val targetSchema: StructType = spark.table(targetTable).schema
 
-  protected val writer: OutputWriter.AtomicWriter = OutputWriter.newFileSystemWriter(
-    location = currentDir,
-    format = ParquetFormat(Some(targetSchema)),
-    partitionColumns = partitionColumns,
-    loadMode = LoadMode.OverwriteTable
-  )
+  protected val writer: OutputWriter.AtomicWriter = dataType match {
+    case STRUCTURED => OutputWriter.newFileSystemWriter(
+      location = currentDir,
+      format = ParquetFormat(Some(targetSchema)),
+      partitionColumns = partitionColumns,
+      loadMode = LoadMode.OverwriteTable
+    )
+    case anotherDataType => throw new RuntimeException(s"Unsupported data type: $anotherDataType for FullLoad.")
+  }
+
 
   override protected val partitionSourceColumn: String = configReader.getAs[String]("partition_column")
   override protected val partitionSourceColumnFormat: String = configReader.getAs[String]("partition_column_format")

@@ -31,11 +31,11 @@ object PartitionMaterialization {
   }
 
   def newRangeMaterialization(spark: SparkSession, dfs: DFSWrapper, configLocation: String): PartitionMaterialization = {
-    new RangeMaterialization(spark, dfs, LoadMode.OverwritePartitions, configLocation)
+    new RangeMaterialization(spark, dfs, LoadMode.OverwritePartitionsWithAddedColumns, configLocation)
   }
 
   def newQueryMaterialization(spark: SparkSession, dfs: DFSWrapper, configLocation: String): PartitionMaterialization = {
-    new QueryMaterialization(spark, dfs, LoadMode.OverwritePartitions, configLocation)
+    new QueryMaterialization(spark, dfs, LoadMode.OverwritePartitionsWithAddedColumns, configLocation)
   }
 
   private class FullMaterialization(val spark: SparkSession, val dfs: DFSWrapper, val loadMode: LoadMode, val configLocation: String)

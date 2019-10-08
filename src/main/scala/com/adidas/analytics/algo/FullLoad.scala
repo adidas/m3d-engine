@@ -35,8 +35,8 @@ final class FullLoad protected(val spark: SparkSession, val dfs: DFSWrapper, val
   override protected def write(dataFrames: Vector[DataFrame]): Unit = {
     super.write(dataFrames)
     restoreTable()
-    if (computeTableStatistics)
-      computeStatisticsForTable(targetTable)
+    if (computeTableStatistics && dataType == STRUCTURED)
+      computeStatisticsForTable(Some(targetTable))
   }
 
   private def createBackupTable(): Unit = {

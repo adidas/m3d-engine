@@ -3,7 +3,7 @@
   "business_key": ["salesorder", "item"],
   "delta_records_file_path": "hdfs:///tmp/tests/",
   "technical_key": ["m3d_timestamp", "datapakid", "partno", "record"],
-  "partition_columns": ["year", "month", "day"],
+  "target_partitions": ["year", "month", "day"],
   "partition_column": "date",
   "partition_column_format": "yyyyMMdd"
 }

@@ -2,7 +2,7 @@ package com.adidas.analytics.config
 
 import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation}
 import com.adidas.analytics.config.AlgorithmTemplateConfiguration.ruleToLocalDate
-import com.adidas.analytics.config.shared.ConfigurationContext
+import com.adidas.analytics.config.shared.{ConfigurationContext, MetadataUpdateStrategy}
 import com.adidas.analytics.util.DataFormat.ParquetFormat
 import com.adidas.analytics.util.{InputReader, LoadMode, OutputWriter}
 import org.apache.spark.sql.SparkSession
@@ -11,7 +11,10 @@ import org.joda.time.format.DateTimeFormat
 import org.joda.time.{Days, LocalDate}
 
 
-trait AlgorithmTemplateConfiguration extends ConfigurationContext with ReadOperation with SafeWriteOperation {
+trait AlgorithmTemplateConfiguration extends ConfigurationContext
+  with ReadOperation
+  with SafeWriteOperation
+  with MetadataUpdateStrategy {
 
   protected def spark: SparkSession
 
@@ -63,7 +66,8 @@ trait AlgorithmTemplateConfiguration extends ConfigurationContext with ReadOpera
     OutputWriter.newTableLocationWriter (
       table = targetTable,
       format = ParquetFormat (Some (targetSchema) ),
-      partitionColumns = Seq ("", "", ""), //If partitions are required, this would look like, e.g., Seq("year", "month")
+      metadataConfiguration = getMetaDataUpdateStrategy(targetTable, Seq ("", "", "")),
+      targetPartitions = Seq ("", "", ""), //If partitions are required, this would look like, e.g., Seq("year", "month")
       loadMode = LoadMode.OverwritePartitionsWithAddedColumns
     )
   }

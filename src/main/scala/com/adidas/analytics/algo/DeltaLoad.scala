@@ -19,12 +19,12 @@ final class DeltaLoad protected(val spark: SparkSession, val dfs: DFSWrapper, va
   extends Algorithm with PartitionedDeltaLoadConfiguration with DateComponentDerivation {
 
   override protected def transform(dataFrames: Vector[DataFrame]): Vector[DataFrame] = {
-    val dataFramesWithPartitionColumnsAdded = withDatePartitions(spark, dfs, dataFrames.take(1))
-    val deltaRecords = dataFramesWithPartitionColumnsAdded(0).persist(StorageLevel.MEMORY_AND_DISK)
+    val dataFramesWithTargetPartitionsAdded = withDatePartitions(spark, dfs, dataFrames.take(1))
+    val deltaRecords = dataFramesWithTargetPartitionsAdded(0).persist(StorageLevel.MEMORY_AND_DISK)
 
     val activeRecords = dataFrames(1)
 
-    val partitions = deltaRecords.collectPartitions(partitionColumns)
+    val partitions = deltaRecords.collectPartitions(targetPartitions)
     val isRequiredPartition = DataFrameUtils.buildPartitionsCriteriaMatcherFunc(partitions, activeRecords.schema)
 
     // Create DataFrame containing full content of partitions that need to be touched
@@ -70,8 +70,8 @@ final class DeltaLoad protected(val spark: SparkSession, val dfs: DFSWrapper, va
     logger.info("Adding partitioning information if needed")
     try {
       dataFrames.map { df =>
-        if (df.columns.toSeq.intersect(partitionColumns) != partitionColumns){
-          df.transform(withDateComponents(partitionSourceColumn, partitionSourceColumnFormat, partitionColumns))
+        if (df.columns.toSeq.intersect(targetPartitions) != targetPartitions){
+          df.transform(withDateComponents(partitionSourceColumn, partitionSourceColumnFormat, targetPartitions))
         }
         else df
       }

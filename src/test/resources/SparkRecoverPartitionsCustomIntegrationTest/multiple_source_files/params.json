@@ -1,0 +1,19 @@
+{
+  "target_table": "test_lake.test_table",
+  "source_dir": "/tmp/tests/test_landing/test_table/data",
+  "header_dir": "/tmp/tests/test_landing/test_table/header",
+  "file_format": "dsv",
+  "delimiter": "|",
+  "metadata_update_strategy": "SparkRecoverPartitionsCustom",
+  "has_header": false,
+  "regex_filename": [
+    "([0-9]{4})(?=[0-9]{2})(?=[0-9]{2})",
+    "(?<=[0-9]{4})([0-9]{2})(?=[0-9]{2})",
+    "(?<=[0-9]{6})([0-9]{2})"
+  ],
+  "target_partitions": [
+    "year",
+    "month",
+    "day"
+  ]
+}

@@ -8,6 +8,7 @@ import org.apache.hadoop.fs.Path
 trait ConfigurationContext extends Serializable {
 
   protected def dfs: DFSWrapper
+
   protected def configLocation: String
 
   protected lazy val configReader: ConfigReader = {
@@ -15,4 +16,5 @@ trait ConfigurationContext extends Serializable {
     val jsonContent = dfs.getFileSystem(configFilePath).readFile(configFilePath)
     ConfigReader(jsonContent)
   }
+
 }

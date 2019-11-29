@@ -69,6 +69,7 @@ object AlgorithmFactory {
       case "PartitionRangeMaterialization" => PartitionMaterialization.newRangeMaterialization(spark, dfs, configLocation)
       case "PartitionQueryMaterialization" => PartitionMaterialization.newQueryMaterialization(spark, dfs, configLocation)
       case "FixedSizeStringExtractor" => FixedSizeStringExtractor(spark, dfs, configLocation)
+      case "NestedFlattener" => NestedFlattener(spark, dfs, configLocation)
       case _ => throw new RuntimeException(s"Unable to find algorithm corresponding to $className")
     }
   }

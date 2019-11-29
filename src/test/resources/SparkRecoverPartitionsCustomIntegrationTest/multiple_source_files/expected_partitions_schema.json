@@ -1,0 +1,10 @@
+{
+  "type" : "struct",
+  "fields" : [ {
+    "name" : "partition",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : { }
+  }
+  ]
+}

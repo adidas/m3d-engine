@@ -2,7 +2,7 @@ package com.adidas.analytics.config
 
 import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation}
 import com.adidas.analytics.config.FixedSizeStringExtractorConfiguration._
-import com.adidas.analytics.config.shared.ConfigurationContext
+import com.adidas.analytics.config.shared.{ConfigurationContext, MetadataUpdateStrategy}
 import com.adidas.analytics.util.DataFormat.ParquetFormat
 import com.adidas.analytics.util.DataFrameUtils.PartitionCriteria
 import com.adidas.analytics.util.{InputReader, LoadMode, OutputWriter}
@@ -12,7 +12,10 @@ import org.joda.time._
 import org.slf4j.{Logger, LoggerFactory}
 
 
-trait FixedSizeStringExtractorConfiguration extends ConfigurationContext with ReadOperation with SafeWriteOperation {
+trait FixedSizeStringExtractorConfiguration extends ConfigurationContext
+  with ReadOperation
+  with SafeWriteOperation
+  with MetadataUpdateStrategy {
 
   private val logger: Logger = LoggerFactory.getLogger(getClass)
 
@@ -22,20 +25,20 @@ trait FixedSizeStringExtractorConfiguration extends ConfigurationContext with Re
   private val targetTable: String = configReader.getAs[String]("target_table").trim
 
   protected val sourceField: String = configReader.getAs[String]("source_field").trim
-  protected val partitionColumnsOrdered: Seq[String] = configReader.getAsSeq[String]("partition_columns")
-  protected val partitionColumnsSet: Set[String] = partitionColumnsOrdered.toSet
+  protected val targetPartitionsOrdered: Seq[String] = configReader.getAsSeq[String]("target_partitions")
+  protected val targetPartitionsSet: Set[String] = targetPartitionsOrdered.toSet
 
   protected val partitionsCriteria: PartitionCriteria = {
     if (configReader.contains("select_conditions")) {
-      if (partitionColumnsOrdered.nonEmpty) {
+      if (targetPartitionsOrdered.nonEmpty) {
         parseConditions(configReader.getAsSeq[String]("select_conditions"))
       } else {
         logger.warn("Select conditions can be applied to partitioned tables only. Ignoring.")
         Seq.empty
       }
     } else if (configReader.contains("select_rules")) {
-      if (partitionColumnsOrdered.nonEmpty) {
-        parseRules(configReader.getAsSeq[String]("select_rules"), partitionColumnsOrdered, partitionColumnsSet)
+      if (targetPartitionsOrdered.nonEmpty) {
+        parseRules(configReader.getAsSeq[String]("select_rules"), targetPartitionsOrdered, targetPartitionsSet)
       } else {
         logger.warn("Select rules can be applied to partitioned tables only. Ignoring.")
         Seq.empty
@@ -59,8 +62,9 @@ trait FixedSizeStringExtractorConfiguration extends ConfigurationContext with Re
   override protected val writer: OutputWriter.AtomicWriter = OutputWriter.newTableLocationWriter(
     table = targetTable,
     format = ParquetFormat(Some(targetSchema)),
-    partitionColumns = partitionColumnsOrdered,
-    loadMode = if (partitionColumnsOrdered.nonEmpty) LoadMode.OverwritePartitionsWithAddedColumns else LoadMode.OverwriteTable
+    metadataConfiguration = getMetaDataUpdateStrategy(targetTable, targetPartitionsOrdered),
+    targetPartitions = targetPartitionsOrdered,
+    loadMode = if (targetPartitionsOrdered.nonEmpty) LoadMode.OverwritePartitionsWithAddedColumns else LoadMode.OverwriteTable
   )
 }
 
@@ -83,37 +87,37 @@ object FixedSizeStringExtractorConfiguration {
     }
   }
 
-  private def parseRules(rules: Seq[String], partitionColumnsOrdered: Seq[String], partitionColumnsSet: Set[String]): PartitionCriteria = {
+  private def parseRules(rules: Seq[String], targetPartitionsOrdered: Seq[String], targetPartitionsSet: Set[String]): PartitionCriteria = {
     if (rules.nonEmpty) {
       val selectDate = rules.foldLeft(LocalDate.now()) {
         case (date, RulePattern(period, "-", value)) =>
-          if (!partitionColumnsSet.contains(period)) {
+          if (!targetPartitionsSet.contains(period)) {
             throw new RuntimeException(s"Unsupported period: $period")
           }
           date.minus(createPeriodByNameAndValue(period, value.toInt))
         case (date, RulePattern(period, "+", value)) =>
-          if (!partitionColumnsSet.contains(period)) {
+          if (!targetPartitionsSet.contains(period)) {
             throw new RuntimeException(s"Unsupported period: $period")
           }
           date.plus(createPeriodByNameAndValue(period, value.toInt))
         case rule =>
           throw new IllegalArgumentException(s"Wrong select rule: $rule")
       }
-      createCriteriaForDate(selectDate, partitionColumnsOrdered)
+      createCriteriaForDate(selectDate, targetPartitionsOrdered)
     } else {
       Seq.empty
     }
   }
 
-  private def createCriteriaForDate(date: LocalDate, partitionColumns: Seq[String]): PartitionCriteria = {
-    partitionColumns match {
+  private def createCriteriaForDate(date: LocalDate, targetPartitions: Seq[String]): PartitionCriteria = {
+    targetPartitions match {
       case Year :: Month :: Day :: Nil =>
         Seq(Year -> date.getYear.toString, Month -> date.getMonthOfYear.toString, Day -> date.getDayOfMonth.toString)
       case Year :: Month :: Nil =>
         Seq(Year -> date.getYear.toString, Month -> date.getMonthOfYear.toString)
       case Year :: Week :: Nil =>
         Seq(Year -> date.getYear.toString, Week -> date.getWeekOfWeekyear.toString)
-      case _ => throw new RuntimeException(s"Unsupported partitioning schema: $partitionColumns")
+      case _ => throw new RuntimeException(s"Unsupported partitioning schema: $targetPartitions")
     }
   }
 

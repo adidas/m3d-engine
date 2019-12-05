@@ -36,6 +36,9 @@ object HadoopLoadHelper {
   def backupDirectoryContent(fs: FileSystem, sourceDir: Path, backupDir: Path): Unit = {
     logger.info(s"Creating backup $sourceDir -> $backupDir")
     try {
+      if (fs.exists(backupDir) || !fs.mkdirs(backupDir)) {
+        throw new IOException(s"Unable to create target directory ${backupDir}")
+      }
       moveChildren(fs, sourceDir, backupDir)
       logger.info("Backup successfully created")
     } catch {

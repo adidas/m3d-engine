@@ -1,10 +1,10 @@
 package com.adidas.analytics.algo
 
+import com.adidas.analytics.config.FullLoadConfiguration
 import com.adidas.analytics.algo.FullLoad._
 import com.adidas.analytics.algo.core.Algorithm
 import com.adidas.analytics.algo.core.Algorithm.{ComputeTableStatisticsOperation, WriteOperation}
 import com.adidas.analytics.algo.shared.DateComponentDerivation
-import com.adidas.analytics.config.FullLoadConfiguration
 import com.adidas.analytics.util.DFSWrapper._
 import com.adidas.analytics.util.DataFormat.{DSVFormat, ParquetFormat}
 import com.adidas.analytics.util._
@@ -12,9 +12,13 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.slf4j.{Logger, LoggerFactory}
 
+import scala.util.{Failure, Success, Try}
+
 
 final class FullLoad protected(val spark: SparkSession, val dfs: DFSWrapper, val configLocation: String)
   extends Algorithm with WriteOperation with FullLoadConfiguration with DateComponentDerivation  with ComputeTableStatisticsOperation{
+
+  val currentHdfsDir: String = HiveTableAttributeReader(targetTable, spark).getTableLocation
 
   override protected def read(): Vector[DataFrame] = {
     createBackupTable()
@@ -33,21 +37,32 @@ final class FullLoad protected(val spark: SparkSession, val dfs: DFSWrapper, val
   }
 
   override protected def write(dataFrames: Vector[DataFrame]): Unit = {
-    super.write(dataFrames)
-    restoreTable()
-    if (computeTableStatistics && dataType == STRUCTURED)
-      computeStatisticsForTable(Some(targetTable))
+    Try{
+      super.write(dataFrames)
+    } match {
+      case Failure(exception) =>
+        logger.error(s"Handled Exception: ${exception.getMessage}. " +
+          s"Start Rolling Back the Full Load of table: ${targetTable}!")
+        recoverFailedWrite()
+        cleanupDirectory(backupDir)
+        throw new RuntimeException(exception.getMessage)
+      case Success(_) =>
+        restoreTable()
+        if (computeTableStatistics && dataType == STRUCTURED)
+          computeStatisticsForTable(Option(targetTable))
+    }
+
   }
 
   private def createBackupTable(): Unit = {
     createDirectory(backupDir)
 
     // backup the data from the current dir because currently data directory for full load is varying
-    val currentDir = HiveTableAttributeReader(targetTable, spark).getTableLocation
-    backupDataDirectory(currentDir, backupDir)
+
+    backupDataDirectory(currentHdfsDir, backupDir)
 
     try {
-      dropAndRecreateTableInNewLocation(targetTable, backupDir, partitionColumns)
+      dropAndRecreateTableInNewLocation(targetTable, backupDir, targetPartitions)
     } catch {
       case e: Throwable =>
         logger.error("Data backup failed", e)
@@ -87,7 +102,7 @@ final class FullLoad protected(val spark: SparkSession, val dfs: DFSWrapper, val
     DistCpLoadHelper.backupDirectoryContent(dfs, sourceDir, destinationDir)
   }
 
-  private def dropAndRecreateTableInNewLocation(table: String, destinationDir: String, partitionColumns: Seq[String]): Unit = {
+  private def dropAndRecreateTableInNewLocation(table: String, destinationDir: String, targetPartitions: Seq[String]): Unit = {
     val tempTable: String = s"${table}_temp"
     val tempTableDummyLocation: String = s"/tmp/$table"
 
@@ -97,7 +112,7 @@ final class FullLoad protected(val spark: SparkSession, val dfs: DFSWrapper, val
     //create the target table like the temp table with data in the new directory
     createTable(tempTable, table, destinationDir)
 
-    if (partitionColumns.nonEmpty) {
+    if (targetPartitions.nonEmpty) {
       spark.catalog.recoverPartitions(table)
     }
   }
@@ -111,8 +126,8 @@ final class FullLoad protected(val spark: SparkSession, val dfs: DFSWrapper, val
   private def withDatePartitions(dataFrames: Vector[DataFrame]): Vector[DataFrame] ={
     logger.info("Adding partitioning information if needed")
     try {
-      if (partitionColumns.nonEmpty) {
-        dataFrames.map(df => df.transform(withDateComponents(partitionSourceColumn, partitionSourceColumnFormat, partitionColumns)))
+      if (targetPartitions.nonEmpty) {
+        dataFrames.map(df => df.transform(withDateComponents(partitionSourceColumn, partitionSourceColumnFormat, targetPartitions)))
       } else {
         dataFrames
       }
@@ -128,7 +143,7 @@ final class FullLoad protected(val spark: SparkSession, val dfs: DFSWrapper, val
 
   private def restoreTable(): Unit ={
     try {
-      dropAndRecreateTableInNewLocation(targetTable, currentDir, partitionColumns)
+      dropAndRecreateTableInNewLocation(targetTable, currentDir, targetPartitions)
     } catch {
       case e: Throwable =>
         logger.error("Data writing failed", e)
@@ -151,23 +166,24 @@ final class FullLoad protected(val spark: SparkSession, val dfs: DFSWrapper, val
       spark.sql(s"DROP TABLE IF EXISTS $tempTable")
     }
 
-    if (partitionColumns.nonEmpty) {
+    if (targetPartitions.nonEmpty) {
       spark.catalog.recoverPartitions(targetTable)
     }
   }
 
   private def recoverFailedRead(): Unit = {
-    dropAndRecreateTableInNewLocation(targetTable, currentDir, partitionColumns)
+    dropAndRecreateTableInNewLocation(targetTable, currentDir, targetPartitions)
   }
 
   private def recoverFailedWrite(): Unit = {
     restoreDirectoryContent(currentDir, backupDir)
-    dropAndRecreateTableInNewLocation(targetTable, currentDir, partitionColumns)
+    dropAndRecreateTableInNewLocation(targetTable, currentDir, targetPartitions)
   }
 
   private def restoreDirectoryContent(sourceDir: String, backupDir: String): Unit = {
     DistCpLoadHelper.restoreDirectoryContent(dfs, sourceDir, backupDir)
   }
+
 }
 
 

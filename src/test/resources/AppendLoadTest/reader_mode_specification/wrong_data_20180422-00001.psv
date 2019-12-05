@@ -1,0 +1,9 @@
+salesorder|item|recordmode|date|customer
+7|2|N|2018-04-20|customer4|some|wrong|columns
+7|2|N|2018-04-20|customer5|very|wrong
+7|3|N|2018-04-20|customer5
+7|1|N|2018-04-20|customer5
+8|1|N|2018-04-20|customer5
+8|2|N|2018-04-20|customer5
+8|3|N|2018-04-20|customer5
+9|3|N|2018-04-18|customer5

@@ -12,6 +12,7 @@ import org.slf4j.{Logger, LoggerFactory}
 trait Algorithm extends JobRunner with Serializable with BaseReadOperation with BaseWriteOperation {
 
   protected def spark: SparkSession
+
   protected def dfs: DFSWrapper
 
   /**
@@ -63,7 +64,7 @@ object Algorithm {
       *
       * @return number of output partitions
       */
-    protected def outputFilesNum: Option[Int] = None  // TODO: make it configurable for all algorithms
+    protected def outputFilesNum: Option[Int] = None // TODO: make it configurable for all algorithms
 
     /**
       * Writes the DataFrame using logic defined in the inheritor class
@@ -141,9 +142,11 @@ object Algorithm {
 
     protected def spark: SparkSession
 
-    protected def computeStatisticsForTable(tableName: Option[String]): Unit = {
-      if (tableName.isDefined)
-        spark.sql(s"ANALYZE TABLE ${tableName.get} COMPUTE STATISTICS")
-    }
+    protected def computeStatisticsForTable(tableName: Option[String]): Unit =
+      tableName match {
+        case Some(table) => spark.sql(s"ANALYZE TABLE ${table} COMPUTE STATISTICS")
+        case None => Unit
+      }
   }
+
 }

@@ -1,7 +1,7 @@
 {
   "source_table": "test_lake.source_table",
   "target_table": "test_lake.target_table",
-  "partition_columns": [],
+  "target_partitions": [],
   "select_conditions": [],
   "source_field": "value",
   "substring_positions": ["1,11", "13,20", "22,30", "32,37", "39,40", "42,71", "73,75", "77,79", "81,85", "87,89"]

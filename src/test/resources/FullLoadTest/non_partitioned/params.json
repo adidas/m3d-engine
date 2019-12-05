@@ -6,7 +6,7 @@
   "has_header": false,
   "partition_column": "",
   "partition_column_format": "",
-  "partition_columns": [],
+  "target_partitions": [],
   "source_dir": "/tmp/tests/test_landing/test/test_table/data",
   "target_table": "test_lake.test_table"
 }

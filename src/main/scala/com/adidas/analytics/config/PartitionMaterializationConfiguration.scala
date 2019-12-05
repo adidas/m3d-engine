@@ -1,6 +1,7 @@
 package com.adidas.analytics.config
 
 import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation}
+import com.adidas.analytics.config.shared.MetadataUpdateStrategy
 import com.adidas.analytics.util.DataFormat.ParquetFormat
 import com.adidas.analytics.util.DataFrameUtils.PartitionCriteria
 import com.adidas.analytics.util.{ConfigReader, InputReader, LoadMode, OutputWriter}
@@ -10,18 +11,23 @@ import org.joda.time._
 import org.joda.time.format.DateTimeFormat
 
 
-trait PartitionMaterializationConfiguration extends ReadOperation with SafeWriteOperation {
+trait PartitionMaterializationConfiguration extends ReadOperation
+  with SafeWriteOperation
+  with MetadataUpdateStrategy {
 
   protected def configReader: ConfigReader
+
   protected def spark: SparkSession
+
   protected def loadMode: LoadMode
+
   protected def partitionsCriteria: Seq[PartitionCriteria]
 
   private val sourceTable: String = configReader.getAs[String]("source_table")
   private val targetTable: String = configReader.getAs[String]("target_table")
   private val targetSchema: StructType = spark.table(targetTable).schema
 
-  protected val partitionColumns: Seq[String] = configReader.getAsSeq[String]("target_partitions").toList
+  protected val targetPartitions: Seq[String] = configReader.getAsSeq[String]("target_partitions").toList
 
   override protected val readers: Vector[InputReader.TableReader] = Vector(
     InputReader.newTableReader(table = sourceTable)
@@ -30,8 +36,9 @@ trait PartitionMaterializationConfiguration extends ReadOperation with SafeWrite
   override protected val writer: OutputWriter.AtomicWriter = OutputWriter.newTableLocationWriter(
     table = targetTable,
     format = ParquetFormat(Some(targetSchema)),
-    partitionColumns = partitionColumns,
-    loadMode = loadMode
+    targetPartitions = targetPartitions,
+    loadMode = loadMode,
+    metadataConfiguration = getMetaDataUpdateStrategy(targetTable, targetPartitions)
   )
 
   override protected def outputFilesNum: Option[Int] = configReader.getAsOption[Int]("number_output_partitions")
@@ -79,10 +86,11 @@ object PartitionMaterializationConfiguration {
     private val fromDateString = configReader.getAs[String]("date_from")
     private val toDateString = configReader.getAs[String]("date_to")
 
-    protected def partitionColumns: Seq[String]
+    protected def targetPartitions: Seq[String]
+
     protected def configReader: ConfigReader
 
-    protected val partitionsCriteria: Seq[PartitionCriteria] = partitionColumns match {
+    protected val partitionsCriteria: Seq[PartitionCriteria] = targetPartitions match {
       case Year :: Month :: Day :: Nil =>
         getDatesRange(FormatYearMonthDay, Days.ONE).map { date =>
           Seq(Year -> date.getYear.toString, Month -> date.getMonthOfYear.toString, Day -> date.getDayOfMonth.toString)
@@ -95,7 +103,7 @@ object PartitionMaterializationConfiguration {
         getDatesRange(FormatYearWeek, Weeks.ONE).map { date =>
           Seq(Year -> date.getYear.toString, Week -> date.getWeekOfWeekyear.toString)
         }.toSeq
-      case _ => throw new RuntimeException(s"Unable to run materialization by date range: unsupported partitioning schema: $partitionColumns")
+      case _ => throw new RuntimeException(s"Unable to run materialization by date range: unsupported partitioning schema: $targetPartitions")
     }
 
     private def getDatesRange(pattern: String, period: ReadablePeriod): Iterator[LocalDate] = {
@@ -108,4 +116,5 @@ object PartitionMaterializationConfiguration {
       Iterator.iterate(startDate)(_.plus(period)).takeWhile(!_.isAfter(endDate))
     }
   }
+
 }

@@ -29,6 +29,13 @@ class ConfigReader(jsonContent: String) extends Serializable {
     }
   }
 
+  def getAsMap[K, V](propertyName: String): Map[K,V] = {
+    config.get(propertyName) match {
+      case Some(JSONObject(obj)) => obj.asInstanceOf[Map[K,V]]
+      case _ => throw new IllegalArgumentException(s"Unable to find configuration property $propertyName")
+    }
+  }
+
   def getAs[T](propertyName: String): T = {
     config.get(propertyName) match {
       case Some(property) => property.asInstanceOf[T]
@@ -38,6 +45,10 @@ class ConfigReader(jsonContent: String) extends Serializable {
 
   def getAsOption[T](propertyName: String): Option[T] = {
     config.get(propertyName).map(property => property.asInstanceOf[T])
+  }
+
+  def getAsOptionSeq[T](propertyName: String): Option[Seq[T]] = {
+    config.get(propertyName).map(_ => getAsSeq(propertyName))
   }
 
   def contains(propertyName: String): Boolean = {

@@ -86,7 +86,7 @@ The parameter file for the full load algorithm for example has the following con
   "has_header": false, 
   "partition_column": "date_column_name", 
   "partition_column_format": "yyyyMMdd", 
-  "partition_columns": [
+  "target_partitions": [
       "year", 
       "month"
   ], 
@@ -103,7 +103,7 @@ The parameter file for the full load algorithm for example has the following con
 *   `has_header` flag defining whether the input files have a header
 *   `partition_column` column that contains the partitioning information
 *   `partition_column_format` format of the partitioning column in the case of of time/date columns
-*   `partition_columns`  partitioning columns
+*   `target_partitions`  partitioning columns in the target
 *   `target_table` target table where the data will be available for querying after loading
 
 ### License and Software Information

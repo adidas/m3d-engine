@@ -6,7 +6,7 @@
   "has_header": false,
   "partition_column": "date",
   "partition_column_format": "yyyyMMdd",
-  "partition_columns": [
+  "target_partitions": [
     "year",
     "month",
     "day"

@@ -27,11 +27,11 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
   }
 
   override protected def transform(dataFrames: Vector[DataFrame]): Vector[DataFrame] = {
-    dataFrames.map(df => df.transform(addPartitionColumns(columnToRegexPairs, targetSchema)))
+    dataFrames.map(df => df.transform(addtargetPartitions(columnToRegexPairs, targetSchema)))
   }
 
   override protected def write(dataFrames: Vector[DataFrame]): Unit = {
-    writeHeaders(dataFrames, partitionColumns, headerDir, dfs)
+    writeHeaders(dataFrames, targetPartitions, headerDir, dfs)
     super.write(dataFrames)
     if (computeTableStatistics && dataType == STRUCTURED)
       computeStatisticsForTable(targetTable)
@@ -47,7 +47,7 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
   }
 
   private def listSources(inputDirPath: Path, headerDirPath: Path, fs: FileSystem, targetSchema: StructType): Seq[Source] = {
-    val targetSchemaWithoutPartitionColumns = getSchemaWithoutPartitionColumns(targetSchema, partitionColumns.toSet)
+    val targetSchemaWithouttargetPartitions = getSchemaWithouttargetPartitions(targetSchema, targetPartitions.toSet)
 
     logger.info(s"Looking for input files in $inputDirPath")
     val groupedHeaderPathAndSourcePaths = fs.ls(inputDirPath, recursive = true).groupBy { inputPath =>
@@ -56,7 +56,7 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
 
     def getMapSchemaStructToPath = {
       val mapSchemaStructToPath = groupedHeaderPathAndSourcePaths.toSeq.map { case (headerPath, sourcePaths) =>
-        getSchemaFromHeaderOrSource(fs, headerPath, sourcePaths, targetSchemaWithoutPartitionColumns)
+        getSchemaFromHeaderOrSource(fs, headerPath, sourcePaths, targetSchemaWithouttargetPartitions)
       }.groupBy(_._1).map { case (k, v) => (k, v.flatMap(_._2)) }
 
       val filteredMapSchemaStructToPath = mapSchemaStructToPath.filter(schemaFromInputData => matchingSchemas_?(schemaFromInputData._1, targetSchema, schemaFromInputData._2))
@@ -73,7 +73,7 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
 
     val schemaAndSourcePath = if(!verifySchema) {
       groupedHeaderPathAndSourcePaths.flatMap { case (headerPath, sourcePaths) =>
-        val schema = if (fs.exists(headerPath)) loadHeader(headerPath, fs) else targetSchemaWithoutPartitionColumns
+        val schema = if (fs.exists(headerPath)) loadHeader(headerPath, fs) else targetSchemaWithouttargetPartitions
         sourcePaths.map { sourcePath =>
           Source(schema, sourcePath.toString)
         }
@@ -84,7 +84,7 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
     schemaAndSourcePath.toSeq
   }
 
-  private def getSchemaFromHeaderOrSource(fs: FileSystem, headerPath: Path, sourcePaths: Seq[Path], targetSchemaWithoutPartitionColumns: StructType): (StructType, Seq[Path]) ={
+  private def getSchemaFromHeaderOrSource(fs: FileSystem, headerPath: Path, sourcePaths: Seq[Path], targetSchemaWithouttargetPartitions: StructType): (StructType, Seq[Path]) ={
     val schema = if (fs.exists(headerPath)){
       loadHeader(headerPath, fs) }
     else {
@@ -143,8 +143,8 @@ object AppendLoad {
     path.replaceFirst("\\w+\\d*://.+?/", "")
   }
 
-  private def getSchemaWithoutPartitionColumns(targetSchema: StructType, partitionColumns: Set[String]): StructType = {
-    StructType(targetSchema.fields.filterNot(field => partitionColumns.contains(field.name)))
+  private def getSchemaWithouttargetPartitions(targetSchema: StructType, targetPartitions: Set[String]): StructType = {
+    StructType(targetSchema.fields.filterNot(field => targetPartitions.contains(field.name)))
   }
 
   private def groupSourcesBySchema(sources: Seq[Source]): Map[StructType, Seq[String]] = {
@@ -153,7 +153,7 @@ object AppendLoad {
     }
   }
 
-  private def addPartitionColumns(columnNameToRegexPairs: Seq[(String, String)], schema: StructType)(inputDf: DataFrame): DataFrame = {
+  private def addtargetPartitions(columnNameToRegexPairs: Seq[(String, String)], schema: StructType)(inputDf: DataFrame): DataFrame = {
     def getInputFileName: Column = {
       udf((path: String) => extractPathWithoutServerAndProtocol(path)).apply(input_file_name)
     }
@@ -185,13 +185,13 @@ object AppendLoad {
     DataType.fromJson(fs.readFile(headerPath)).asInstanceOf[StructType]
   }
 
-  protected def writeHeaders(dataFrames: Seq[DataFrame], partitionColumns: Seq[String], headerDir: String, dfs: DFSWrapper): Unit = {
+  protected def writeHeaders(dataFrames: Seq[DataFrame], targetPartitions: Seq[String], headerDir: String, dfs: DFSWrapper): Unit = {
     logger.info(s"Writing header files to $headerDir")
     val headerDirPath = new Path(headerDir)
     val fs = dfs.getFileSystem(headerDirPath)
     dataFrames.foreach { df =>
-      val schemaJson = getSchemaWithoutPartitionColumns(df.schema, partitionColumns.toSet).prettyJson
-      df.collectPartitions(partitionColumns).foreach { partitionCriteria =>
+      val schemaJson = getSchemaWithouttargetPartitions(df.schema, targetPartitions.toSet).prettyJson
+      df.collectPartitions(targetPartitions).foreach { partitionCriteria =>
         val subdirectories = DataFrameUtils.mapPartitionsToDirectories(partitionCriteria)
         val headerPath = new Path(headerDirPath.join(subdirectories), headerFileName)
         if (!fs.exists(headerPath)) {

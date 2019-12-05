@@ -20,9 +20,9 @@ object DataFrameUtils {
   }
 
   def buildPartitionsCriteriaMatcherFunc(multiplePartitionsCriteria: Seq[PartitionCriteria], schema: StructType): FilterFunction = {
-    val partitionColumns = multiplePartitionsCriteria.flatten.map(_._1).toSet
+    val targetPartitions = multiplePartitionsCriteria.flatten.map(_._1).toSet
     val fieldNameToMatchFunctionMapping = schema.fields.filter {
-      case StructField(name, _, _, _) => partitionColumns.contains(name)
+      case StructField(name, _, _, _) => targetPartitions.contains(name)
     }.map {
       case StructField(name, _: ByteType, _, _)    => name -> ((r: Row, value: String) => r.getAs[Byte](name)    == value.toByte)
       case StructField(name, _: ShortType, _, _)   => name -> ((r: Row, value: String) => r.getAs[Short](name)   == value.toShort)
@@ -53,12 +53,12 @@ object DataFrameUtils {
 
   implicit class DataFrameHelper(df: DataFrame) {
 
-    def collectPartitions(partitionColumns: Seq[String]): Seq[PartitionCriteria] = {
-      logger.info(s"Collecting unique partitions for partitions columns (${partitionColumns.mkString(", ")})")
-      val partitions = df.selectExpr(partitionColumns: _*).distinct().collect()
+    def collectPartitions(targetPartitions: Seq[String]): Seq[PartitionCriteria] = {
+      logger.info(s"Collecting unique partitions for partitions columns (${targetPartitions.mkString(", ")})")
+      val partitions = df.selectExpr(targetPartitions: _*).distinct().collect()
 
       partitions.map { row =>
-        partitionColumns.map { columnName =>
+        targetPartitions.map { columnName =>
           Option(row.getAs[Any](columnName)) match {
             case Some(columnValue) => columnName -> columnValue.toString
             case None => throw new RuntimeException(s"Partition column '$columnName' contains null value")

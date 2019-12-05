@@ -7,6 +7,6 @@ trait DateComponentDerivationConfiguration {
 
   protected def partitionSourceColumnFormat: String
 
-  protected def partitionColumns: Seq[String]
+  protected def targetPartitions: Seq[String]
 }
 

@@ -24,7 +24,7 @@ final class FixedSizeStringExtractor protected(val spark: SparkSession, val dfs:
   }
 
   def extractFields(df: DataFrame, targetSchema: StructType): DataFrame = {
-    val nonPartitionFields = targetSchema.fields.filter(field => !partitionColumnsSet.contains(field.name))
+    val nonPartitionFields = targetSchema.fields.filter(field => !targetPartitionsSet.contains(field.name))
     if (substringPositions.length != nonPartitionFields.length) {
       throw new RuntimeException("Field positions do not correspond to the target schema")
     }

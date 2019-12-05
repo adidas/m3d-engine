@@ -1,5 +1,6 @@
 package com.adidas.analytics.util
 
+import com.adidas.analytics.algo.core.Metadata
 import com.adidas.analytics.util.DataFrameUtils._
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.{DataFrameWriter, _}
@@ -12,15 +13,15 @@ sealed abstract class OutputWriter {
 
   val logger: Logger = LoggerFactory.getLogger(getClass)
 
-  def partitionColumns: Seq[String]
+  def targetPartitions: Seq[String]
 
   def options: Map[String, String]
 
   def write(dfs: DFSWrapper, df: DataFrame): Unit
 
   protected def getWriter(df: DataFrame): DataFrameWriter[Row] = {
-    if (partitionColumns.nonEmpty) {
-      df.write.partitionBy(partitionColumns: _*)
+    if (targetPartitions.nonEmpty) {
+      df.write.partitionBy(targetPartitions: _*)
     } else {
       df.write
     }
@@ -34,14 +35,14 @@ object OutputWriter {
     * Factory method which creates TableWriter
     *
     * @param table target table
-    * @param partitionColumns specifies how data should be partitioned
+    * @param targetPartitions specifies how data should be partitioned
     * @param options options which are provided to Spark DataFrameWriter
     * @param loadMode specifies LoadMode for the writer (see more details for SaveMode in Spark documentation)
     * @return TableWriter
     */
-  def newTableWriter(table: String, partitionColumns: Seq[String] = Seq.empty, options: Map[String, String] = Map.empty,
+  def newTableWriter(table: String, targetPartitions: Seq[String] = Seq.empty, options: Map[String, String] = Map.empty,
                      loadMode: LoadMode = LoadMode.OverwritePartitionsWithAddedColumns): TableWriter = {
-    TableWriter(table, partitionColumns, options, loadMode)
+    TableWriter(table, targetPartitions, options, loadMode)
   }
 
   /**
@@ -49,14 +50,15 @@ object OutputWriter {
     *
     * @param table target table which location is used for writing data to
     * @param format format of result data
-    * @param partitionColumns specifies how data should be partitioned
+    * @param targetPartitions specifies how data should be partitioned
     * @param options options which are provided to Spark DataFrameWriter
     * @param loadMode specifies LoadMode for the writer (see more details for SaveMode in Spark documentation)
     * @return TableLocationWriter
     */
-  def newTableLocationWriter(table: String, format: DataFormat, partitionColumns: Seq[String] = Seq.empty,
-                             options: Map[String, String] = Map.empty, loadMode: LoadMode = LoadMode.OverwritePartitionsWithAddedColumns): TableLocationWriter = {
-    TableLocationWriter(table, format, partitionColumns, options, loadMode)
+  def newTableLocationWriter(table: String, format: DataFormat, targetPartitions: Seq[String] = Seq.empty,
+                             options: Map[String, String] = Map.empty, loadMode: LoadMode = LoadMode.OverwritePartitionsWithAddedColumns,
+                             metadataConfiguration: Metadata): TableLocationWriter = {
+    TableLocationWriter(table, format, targetPartitions, options, loadMode, metadataConfiguration)
   }
 
   /**
@@ -64,14 +66,14 @@ object OutputWriter {
     *
     * @param location output location on the filesystem
     * @param format format of result data
-    * @param partitionColumns specifies how data should be partitioned
+    * @param targetPartitions specifies how data should be partitioned
     * @param options options which are provided to Spark DataFrameWriter
     * @param loadMode specifies LoadMode for the writer (see more details for SaveMode in Spark documentation)
     * @return FileSystemWriter
     */
-  def newFileSystemWriter(location: String, format: DataFormat, partitionColumns: Seq[String] = Seq.empty,
+  def newFileSystemWriter(location: String, format: DataFormat, targetPartitions: Seq[String] = Seq.empty,
                           options: Map[String, String] = Map.empty, loadMode: LoadMode = LoadMode.OverwritePartitionsWithAddedColumns): FileSystemWriter = {
-    FileSystemWriter(location, format, partitionColumns, options, loadMode)
+    FileSystemWriter(location, format, targetPartitions, options, loadMode)
   }
 
   /**
@@ -97,7 +99,7 @@ object OutputWriter {
     }
 
     protected def writeSafe(dfs: DFSWrapper, df: DataFrame, finalLocation: String, loadMode: LoadMode): Unit = {
-      lazy val partitionsCriteria = df.collectPartitions(partitionColumns)
+      lazy val partitionsCriteria = df.collectPartitions(targetPartitions)
 
       val finalPath = new Path(finalLocation)
       val fs = dfs.getFileSystem(finalPath)
@@ -107,8 +109,6 @@ object OutputWriter {
       val tempBackupPath = new Path(tempPath, "backup")
 
       fs.delete(tempPath, true)
-      fs.mkdirs(tempDataPath)
-      fs.mkdirs(tempBackupPath)
 
       loadMode match {
         case LoadMode.OverwriteTable =>
@@ -183,12 +183,12 @@ object OutputWriter {
             throw new RuntimeException(s"Unable to load data to $finalPath", e)
         }
       } else {
-        logger.warn(s"Unable to load data, output data has no partitions for partition columns $partitionColumns")
+        logger.warn(s"Unable to load data, output data has no partitions for partition columns $targetPartitions")
       }
     }
   }
 
-  case class TableWriter(table: String, partitionColumns: Seq[String], options: Map[String, String],
+  case class TableWriter(table: String, targetPartitions: Seq[String], options: Map[String, String],
                          loadMode: LoadMode) extends OutputWriter {
 
     override def write(dfs: DFSWrapper, df: DataFrame): Unit = {
@@ -201,7 +201,7 @@ object OutputWriter {
     }
   }
 
-  case class FileSystemWriter(location: String, format: DataFormat, partitionColumns: Seq[String],
+  case class FileSystemWriter(location: String, format: DataFormat, targetPartitions: Seq[String],
                               options: Map[String, String], loadMode: LoadMode) extends AtomicWriter {
 
     override def write(dfs: DFSWrapper, df: DataFrame): Unit = {
@@ -213,17 +213,18 @@ object OutputWriter {
     }
   }
 
-  case class TableLocationWriter(table: String, format: DataFormat, partitionColumns: Seq[String],
-                                 options: Map[String, String], loadMode: LoadMode) extends AtomicWriter {
+  case class TableLocationWriter(table: String, format: DataFormat, targetPartitions: Seq[String],
+                                 options: Map[String, String], loadMode: LoadMode,
+                                 metadataConfiguration: Metadata) extends AtomicWriter {
 
     override def write(dfs: DFSWrapper, df: DataFrame): Unit = {
       val spark = df.sparkSession
       val location = getTableLocation(spark)
       writeUnsafe(dfs, df, location, loadMode)
-      if (partitionColumns.nonEmpty){
-        spark.catalog.recoverPartitions(table)
+      if (targetPartitions.nonEmpty){
+        metadataConfiguration.recoverPartitions(df)
       } else {
-        spark.catalog.refreshTable(table)
+        metadataConfiguration.refreshTable(df)
       }
     }
 
@@ -231,10 +232,10 @@ object OutputWriter {
       val spark = df.sparkSession
       val location = getTableLocation(spark)
       writeSafe(dfs, df, location, loadMode)
-      if (partitionColumns.nonEmpty){
-        spark.catalog.recoverPartitions(table)
+      if (targetPartitions.nonEmpty){
+        metadataConfiguration.recoverPartitions(df)
       } else {
-        spark.catalog.refreshTable(table)
+        metadataConfiguration.refreshTable(df)
       }
     }
 

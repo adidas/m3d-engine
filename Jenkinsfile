@@ -1,6 +1,4 @@
 pipeline {
-  agent { label 'm3d' }
-
   options {
     ansiColor('xterm')
     disableConcurrentBuilds()
@@ -8,10 +6,6 @@ pipeline {
     skipStagesAfterUnstable()
     timeout(time: 1, unit: 'HOURS')
     buildDiscarder(logRotator(daysToKeepStr: '32', numToKeepStr: '16'))
-  }
-
-  environment {
-    GIT_CREDENTIALS = "9654c627-4650-4079-be03-2d0336fe724f"
   }
 
   stages {

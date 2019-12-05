@@ -1,16 +1,20 @@
 package com.adidas.analytics.config
 
 import com.adidas.analytics.algo.core.Algorithm.SafeWriteOperation
-import com.adidas.analytics.config.shared.{ConfigurationContext, LoadConfiguration}
+import com.adidas.analytics.config.shared.{ConfigurationContext, LoadConfiguration, MetadataUpdateStrategy}
 import com.adidas.analytics.util.DataFormat.ParquetFormat
 import com.adidas.analytics.util.{LoadMode, OutputWriter}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.util.DropMalformedMode
 import org.apache.spark.sql.types.{DataType, StructType}
 
 import scala.util.parsing.json.JSONObject
 
 
-trait AppendLoadConfiguration extends ConfigurationContext with LoadConfiguration with SafeWriteOperation {
+trait AppendLoadConfiguration extends ConfigurationContext
+  with LoadConfiguration
+  with SafeWriteOperation
+  with MetadataUpdateStrategy {
 
   protected def spark: SparkSession
 
@@ -19,6 +23,7 @@ trait AppendLoadConfiguration extends ConfigurationContext with LoadConfiguratio
   protected val headerDir: String = configReader.getAs[String]("header_dir")
 
   protected val targetTable: Option[String] = configReader.getAsOption[String]("target_table")
+
 
   // This option is used to specify whether the input data schema must be the same as target schema specified in the configuration file
   // Note: if it is set to True, it will cause input data to be read more than once
@@ -29,7 +34,7 @@ trait AppendLoadConfiguration extends ConfigurationContext with LoadConfiguratio
     case _ => false
   }
 
-  protected val columnToRegexPairs: Seq[(String, String)] = partitionColumns zip regexFilename
+  protected val columnToRegexPairs: Seq[(String, String)] = targetPartitions zip regexFilename
 
   private val jsonSchemaOption: Option[JSONObject] = configReader.getAsOption[JSONObject]("schema")
 
@@ -41,13 +46,14 @@ trait AppendLoadConfiguration extends ConfigurationContext with LoadConfiguratio
     case STRUCTURED if targetTable.isDefined => OutputWriter.newTableLocationWriter(
       table = targetTable.get,
       format = ParquetFormat(Some(targetSchema)),
-      partitionColumns = partitionColumns,
-      loadMode = LoadMode.OverwritePartitionsWithAddedColumns
+      targetPartitions = targetPartitions,
+      loadMode = LoadMode.OverwritePartitionsWithAddedColumns,
+      metadataConfiguration = getMetaDataUpdateStrategy(targetTable.get,targetPartitions)
     )
     case SEMISTRUCTURED if targetDir.isDefined => OutputWriter.newFileSystemWriter(
       location = targetDir.get,
       format = ParquetFormat(Some(targetSchema)),
-      partitionColumns = partitionColumns,
+      targetPartitions = targetPartitions,
       loadMode = LoadMode.OverwritePartitions
     )
     case anotherDataType => throw new RuntimeException(s"Unsupported data type: $anotherDataType in AppendLoad or the configuration file is malformed.")
@@ -67,4 +73,6 @@ trait AppendLoadConfiguration extends ConfigurationContext with LoadConfiguratio
       case anotherDataType => throw new RuntimeException(s"Unsupported data type: $anotherDataType in AppendLoad or the configuration file is malformed.")
     }
   }
+
+  override def loadMode: String = readerModeSetter(DropMalformedMode.name)
 }

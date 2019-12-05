@@ -1,14 +1,14 @@
 package com.adidas.analytics.config
 
 import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation}
-import com.adidas.analytics.config.shared.{ConfigurationContext, DateComponentDerivationConfiguration}
+import com.adidas.analytics.config.shared.{ConfigurationContext, DateComponentDerivationConfiguration, MetadataUpdateStrategy}
 import com.adidas.analytics.util.DataFormat.ParquetFormat
 import com.adidas.analytics.util.{DataFormat, InputReader, LoadMode, OutputWriter}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{Row, SparkSession}
 
 
-trait DeltaLoadConfiguration extends ConfigurationContext {
+trait DeltaLoadConfiguration extends ConfigurationContext with MetadataUpdateStrategy {
 
   protected val activeRecordsTable: String = configReader.getAs[String]("active_records_table_lake")
   protected val deltaRecordsTable: Option[String] = configReader.getAsOption[String]("delta_records_table_lake")
@@ -34,7 +34,7 @@ object DeltaLoadConfiguration {
 
     protected def spark: SparkSession
 
-    override protected val partitionColumns: Seq[String] = configReader.getAsSeq[String]("partition_columns")
+    override protected val targetPartitions: Seq[String] = configReader.getAsSeq[String]("target_partitions")
     override protected val partitionSourceColumn: String = configReader.getAs[String]("partition_column")
     override protected val partitionSourceColumnFormat: String = configReader.getAs[String]("partition_column_format")
 
@@ -48,7 +48,8 @@ object DeltaLoadConfiguration {
     override protected val writer: OutputWriter.AtomicWriter = OutputWriter.newTableLocationWriter(
       table = activeRecordsTable,
       format = ParquetFormat(Some(targetSchema)),
-      partitionColumns = partitionColumns,
+      targetPartitions = targetPartitions,
+      metadataConfiguration = getMetaDataUpdateStrategy(activeRecordsTable, targetPartitions),
       loadMode = LoadMode.OverwritePartitionsWithAddedColumns
     )
   }
@@ -61,6 +62,7 @@ object DeltaLoadConfiguration {
         location => InputReader.newFileSystemReader(s"$location*.parquet", DataFormat.ParquetFormat())
       }
     }
+
     deltaRecordsTable.fold(createInputReaderByPath)(tableName => InputReader.newTableReader(tableName))
   }
 }

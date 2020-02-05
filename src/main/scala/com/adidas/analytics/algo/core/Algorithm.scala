@@ -6,10 +6,15 @@ import com.adidas.analytics.util.{DFSWrapper, InputReader, OutputWriter}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.slf4j.{Logger, LoggerFactory}
 
+
 /**
   * Base trait for algorithms that defines their base methods
   */
-trait Algorithm extends JobRunner with Serializable with BaseReadOperation with BaseWriteOperation {
+trait Algorithm extends JobRunner
+  with Serializable
+  with BaseReadOperation
+  with BaseWriteOperation
+  with BaseUpdateStatisticsOperation {
 
   protected def spark: SparkSession
 
@@ -32,7 +37,9 @@ trait Algorithm extends JobRunner with Serializable with BaseReadOperation with 
     logger.info("Starting processing stage...")
     val result = transform(inputDateFrames)
     logger.info("Starting writing stage...")
-    write(result)
+    val outputResult = write(result)
+    logger.info("Starting computing statistics...")
+    updateStatistics(outputResult)
   }
 }
 
@@ -55,6 +62,31 @@ object Algorithm {
   }
 
   /**
+    * Base trait for update statistics operations
+    */
+  trait BaseUpdateStatisticsOperation {
+
+    /**
+      * Reads the produced output dataframe and update table statistics
+      *
+      * @return DataFrame written in writer() step
+      */
+    protected def updateStatistics(dataFrames: Vector[DataFrame]): Unit
+  }
+
+  /**
+    * The simplest implementation of update statistics
+    */
+  trait UpdateStatisticsOperation extends BaseUpdateStatisticsOperation {
+    /**
+      * By default the Update Statistics are disabled for a given Algorithm
+      * @param dataFrames Dataframes to compute statistics
+      */
+    override protected def updateStatistics(dataFrames: Vector[DataFrame]): Unit = logger.info("Skipping update statistics step!")
+
+  }
+
+  /**
     * Base trait for write operations
     */
   trait BaseWriteOperation {
@@ -71,7 +103,7 @@ object Algorithm {
       *
       * @param dataFrames DataFrame to write
       */
-    protected def write(dataFrames: Vector[DataFrame]): Unit
+    protected def write(dataFrames: Vector[DataFrame]): Vector[DataFrame]
   }
 
   /**
@@ -107,8 +139,8 @@ object Algorithm {
       */
     protected def writer: AtomicWriter
 
-    override protected def write(dataFrames: Vector[DataFrame]): Unit = {
-      dataFrames.foreach { df =>
+    override protected def write(dataFrames: Vector[DataFrame]): Vector[DataFrame] = {
+      dataFrames.map { df =>
         writer.writeWithBackup(dfs, outputFilesNum.map(df.repartition).getOrElse(df))
       }
     }
@@ -129,8 +161,8 @@ object Algorithm {
       */
     protected def writer: OutputWriter
 
-    override protected def write(dataFrames: Vector[DataFrame]): Unit = {
-      dataFrames.foreach { df =>
+    override protected def write(dataFrames: Vector[DataFrame]): Vector[DataFrame] = {
+      dataFrames.map { df =>
         writer.write(dfs, outputFilesNum.map(df.repartition).getOrElse(df))
       }
     }

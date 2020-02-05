@@ -1,14 +1,18 @@
 package com.adidas.analytics.config
 
 import com.adidas.analytics.config.shared.{ConfigurationContext, MetadataUpdateStrategy}
-import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation}
+import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation, UpdateStatisticsOperation}
 import com.adidas.analytics.util.DataFormat.ParquetFormat
 import com.adidas.analytics.util.{InputReader, LoadMode, OutputWriter}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.StructType
 
 
-trait NestedFlattenerConfiguration extends ConfigurationContext with ReadOperation with SafeWriteOperation with MetadataUpdateStrategy {
+trait NestedFlattenerConfiguration extends ConfigurationContext
+  with ReadOperation
+  with SafeWriteOperation
+  with UpdateStatisticsOperation
+  with MetadataUpdateStrategy {
 
   protected def spark: SparkSession
 

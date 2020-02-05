@@ -1,6 +1,6 @@
 package com.adidas.analytics.config
 
-import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation}
+import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation, UpdateStatisticsOperation}
 import com.adidas.analytics.config.FixedSizeStringExtractorConfiguration._
 import com.adidas.analytics.config.shared.{ConfigurationContext, MetadataUpdateStrategy}
 import com.adidas.analytics.util.DataFormat.ParquetFormat
@@ -15,6 +15,7 @@ import org.slf4j.{Logger, LoggerFactory}
 trait FixedSizeStringExtractorConfiguration extends ConfigurationContext
   with ReadOperation
   with SafeWriteOperation
+  with UpdateStatisticsOperation
   with MetadataUpdateStrategy {
 
   private val logger: Logger = LoggerFactory.getLogger(getClass)

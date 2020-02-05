@@ -41,10 +41,10 @@ class DateComponentDerivationTest extends FunSuite with SparkSessionWrapper with
     val transformedDf = sampleDf.transform(dateComponentDerivationTester)
 
     val expectedDf = Seq(
-      ("201301",2013,1),
-      ("201531",2015,31),
-      ("202001",2020,1)
-    ).toDF("zatpweek","year","week")
+      ("201301", 2013, 1),
+      ("201531", 2015, 31),
+      ("202001", 2020, 1)
+    ).toDF("zatpweek", "year", "week")
 
     transformedDf.hasDiff(expectedDf) shouldBe false
   }
@@ -54,23 +54,25 @@ class DateComponentDerivationTest extends FunSuite with SparkSessionWrapper with
     val sampleDf = Seq(
       ("20130112"),
       ("20150815"),
-      ("20200325")
+      ("20200325"),
+      ("20180110")
     ).toDF("partcol")
 
     val dateComponentDerivationTester: DataFrame => DataFrame = new DateComponentDerivationSubClass()
       .validateWithDateComponents(
         sourceDateColumnName = "partcol",
         sourceDateFormat = "yyyyMMdd",
-        targetDateComponentColumnNames = Seq("year", "month","day")
+        targetDateComponentColumnNames = Seq("year", "month", "day")
       )
 
     val transformedDf = sampleDf.transform(dateComponentDerivationTester)
 
     val expectedDf = Seq(
-      ("20130112",2013,1,12),
-      ("20150815",2015,8,15),
-      ("20200325",2020,3,25)
-    ).toDF("partcol","year","month","day")
+      ("20130112", 2013, 1, 12),
+      ("20150815", 2015, 8, 15),
+      ("20200325", 2020, 3, 25),
+      ("20180110", 2018, 1, 10)
+    ).toDF("partcol", "year", "month", "day")
 
     transformedDf.hasDiff(expectedDf) shouldBe false
   }
@@ -93,10 +95,10 @@ class DateComponentDerivationTest extends FunSuite with SparkSessionWrapper with
     val transformedDf = sampleDf.transform(dateComponentDerivationTester)
 
     val expectedDf = Seq(
-      ("20130112",2013,1),
-      ("20150815",2015,8),
-      ("20200325",2020,3)
-    ).toDF("partcol","year","month")
+      ("20130112", 2013, 1),
+      ("20150815", 2015, 8),
+      ("20200325", 2020, 3)
+    ).toDF("partcol", "year", "month")
 
     transformedDf.hasDiff(expectedDf) shouldBe false
   }
@@ -119,10 +121,10 @@ class DateComponentDerivationTest extends FunSuite with SparkSessionWrapper with
     val transformedDf = sampleDf.transform(dateComponentDerivationTester)
 
     val expectedDf = Seq(
-      ("20130112",2013,1),
-      ("201508151",9999,99),
-      ("20200325",2020,3)
-    ).toDF("partcol","year","month")
+      ("20130112", 2013, 1),
+      ("201508151", 9999, 99),
+      ("20200325", 2020, 3)
+    ).toDF("partcol", "year", "month")
 
     transformedDf.hasDiff(expectedDf) shouldBe false
   }
@@ -144,10 +146,10 @@ class DateComponentDerivationTest extends FunSuite with SparkSessionWrapper with
 
     val transformedDf = sampleDf.transform(dateComponentDerivationTester)
     val expectedDf = Seq(
-      (201301,2013,1),
-      (2015233,9999,99),
-      (202003,2020,3)
-    ).toDF("partcol","year","month")
+      (201301, 2013, 1),
+      (2015233, 9999, 99),
+      (202003, 2020, 3)
+    ).toDF("partcol", "year", "month")
 
     transformedDf.hasDiff(expectedDf) shouldBe false
   }
@@ -170,9 +172,9 @@ class DateComponentDerivationTest extends FunSuite with SparkSessionWrapper with
     val transformedDf = sampleDf.transform(dateComponentDerivationTester)
 
     val expectedDf = Seq(
-      (2013014,2013,1,4),
-      (2015233,2015,23,3),
-      (2020037,2020,3,7)
+      (2013014, 2013, 1, 4),
+      (2015233, 2015, 23, 3),
+      (2020037, 2020, 3, 7)
     ).toDF("partcol", "year", "week", "day")
 
     transformedDf.hasDiff(expectedDf) shouldBe false

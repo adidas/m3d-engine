@@ -42,7 +42,7 @@ trait LoadConfiguration {
 
   protected def readQuoteValue: Option[String] = configReader.getAsOption[String]("quote_character")
 
-  protected def computeTableStatistics: Boolean = configReader.getAsOption[Boolean]("compute_table_statistics").getOrElse(false)
+  protected def computeTableStatistics: Boolean = configReader.getAsOption[Boolean]("compute_table_statistics").getOrElse(true)
 
   protected def readerModeSetter(defaultMode: String): String = {
     configReader.getAsOption[String]("reader_mode") match {

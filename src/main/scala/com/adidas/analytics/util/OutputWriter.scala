@@ -6,6 +6,8 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.{DataFrameWriter, _}
 import org.slf4j.{Logger, LoggerFactory}
 
+import scala.util.{Failure, Success, Try}
+
 /**
   * Base trait for classes which are capable of persisting DataFrames
   */
@@ -17,7 +19,7 @@ sealed abstract class OutputWriter {
 
   def options: Map[String, String]
 
-  def write(dfs: DFSWrapper, df: DataFrame): Unit
+  def write(dfs: DFSWrapper, df: DataFrame): DataFrame
 
   protected def getWriter(df: DataFrame): DataFrameWriter[Row] = {
     if (targetPartitions.nonEmpty) {
@@ -87,9 +89,9 @@ object OutputWriter {
 
     def format: DataFormat
 
-    def writeWithBackup(dfs: DFSWrapper, df: DataFrame): Unit
+    def writeWithBackup(dfs: DFSWrapper, df: DataFrame): DataFrame
 
-    protected def writeUnsafe(dfs: DFSWrapper, df: DataFrame, finalLocation: String, loadMode: LoadMode): Unit = {
+    protected def writeUnsafe(dfs: DFSWrapper, df: DataFrame, finalLocation: String, loadMode: LoadMode): DataFrame = {
       val finalPath = new Path(finalLocation)
       val fs = dfs.getFileSystem(finalPath)
       if (loadMode == LoadMode.OverwriteTable) {
@@ -98,50 +100,57 @@ object OutputWriter {
       write(fs, df, finalPath, loadMode)
     }
 
-    protected def writeSafe(dfs: DFSWrapper, df: DataFrame, finalLocation: String, loadMode: LoadMode): Unit = {
-      lazy val partitionsCriteria = df.collectPartitions(targetPartitions)
+    protected def writeSafe(dfs: DFSWrapper, df: DataFrame, finalLocation: String, loadMode: LoadMode): DataFrame = {
+      Try {
+        lazy val partitionsCriteria = df.collectPartitions(targetPartitions)
 
-      val finalPath = new Path(finalLocation)
-      val fs = dfs.getFileSystem(finalPath)
+        val finalPath = new Path(finalLocation)
+        val fs = dfs.getFileSystem(finalPath)
 
-      val tempPath = HadoopLoadHelper.buildTempPath(finalPath)
-      val tempDataPath = new Path(tempPath, "data")
-      val tempBackupPath = new Path(tempPath, "backup")
+        val tempPath = HadoopLoadHelper.buildTempPath(finalPath)
+        val tempDataPath = new Path(tempPath, "data")
+        val tempBackupPath = new Path(tempPath, "backup")
 
-      fs.delete(tempPath, true)
+        fs.delete(tempPath, true)
 
-      loadMode match {
-        case LoadMode.OverwriteTable =>
-          loadTable(fs, df, finalPath, tempDataPath, tempBackupPath)
-        case LoadMode.OverwritePartitions =>
-          loadPartitions(fs, df, finalPath, tempDataPath, tempBackupPath, partitionsCriteria)
-        case LoadMode.OverwritePartitionsWithAddedColumns =>
-          val existingDf = format.read(df.sparkSession.read, finalLocation)
-          val outputDf = df.addMissingColumns(existingDf.schema)
-          loadPartitions(fs, outputDf, finalPath, tempDataPath, tempBackupPath, partitionsCriteria)
-        case LoadMode.AppendJoinPartitions =>
-          val isRequiredPartition = DataFrameUtils.buildPartitionsCriteriaMatcherFunc(partitionsCriteria, df.schema)
-          val existingDf = format.read(df.sparkSession.read, finalLocation).filter(isRequiredPartition)
-          val joinColumns = existingDf.columns.toSet intersect df.columns.toSet
-          val combinedDf = existingDf.join(df, joinColumns.toSeq, "FULL_OUTER")
-          loadPartitions(fs, combinedDf, finalPath, tempDataPath, tempBackupPath, partitionsCriteria)
-        case LoadMode.AppendUnionPartitions =>
-          val isRequiredPartition = DataFrameUtils.buildPartitionsCriteriaMatcherFunc(partitionsCriteria, df.schema)
-          val existingDf = format.read(df.sparkSession.read, finalLocation).filter(isRequiredPartition)
-          val combinedDf = df.addMissingColumns(existingDf.schema).union(existingDf)
-          loadPartitions(fs, combinedDf, finalPath, tempDataPath, tempBackupPath, partitionsCriteria)
+        loadMode match {
+          case LoadMode.OverwriteTable =>
+            loadTable(fs, df, finalPath, tempDataPath, tempBackupPath)
+          case LoadMode.OverwritePartitions =>
+            loadPartitions(fs, df, finalPath, tempDataPath, tempBackupPath, partitionsCriteria)
+          case LoadMode.OverwritePartitionsWithAddedColumns =>
+            val existingDf = format.read(df.sparkSession.read, finalLocation)
+            val outputDf = df.addMissingColumns(existingDf.schema)
+            loadPartitions(fs, outputDf, finalPath, tempDataPath, tempBackupPath, partitionsCriteria)
+          case LoadMode.AppendJoinPartitions =>
+            val isRequiredPartition = DataFrameUtils.buildPartitionsCriteriaMatcherFunc(partitionsCriteria, df.schema)
+            val existingDf = format.read(df.sparkSession.read, finalLocation).filter(isRequiredPartition)
+            val joinColumns = existingDf.columns.toSet intersect df.columns.toSet
+            val combinedDf = existingDf.join(df, joinColumns.toSeq, "FULL_OUTER")
+            loadPartitions(fs, combinedDf, finalPath, tempDataPath, tempBackupPath, partitionsCriteria)
+          case LoadMode.AppendUnionPartitions =>
+            val isRequiredPartition = DataFrameUtils.buildPartitionsCriteriaMatcherFunc(partitionsCriteria, df.schema)
+            val existingDf = format.read(df.sparkSession.read, finalLocation).filter(isRequiredPartition)
+            val combinedDf = df.addMissingColumns(existingDf.schema).union(existingDf)
+            loadPartitions(fs, combinedDf, finalPath, tempDataPath, tempBackupPath, partitionsCriteria)
+        }
+
+        fs.delete(tempPath, true)
+      } match {
+        case Failure(exception) => throw exception
+        case Success(_) => df
       }
 
-      fs.delete(tempPath, true)
     }
 
-    private def write(fs: FileSystem, df: DataFrame, finalPath: Path, loadMode: LoadMode): Unit = {
-      try {
-        val writer = getWriter(df).options(options).mode(loadMode.sparkMode)
-        format.write(writer, finalPath.toUri.toString)
-        logger.info(s"Data was successfully written to $finalPath")
-      } catch {
-        case e: Throwable => throw new RuntimeException(s"Unable to process data", e)
+    private def write(fs: FileSystem, df: DataFrame, finalPath: Path, loadMode: LoadMode): DataFrame = {
+      Try {
+          val writer = getWriter(df).options(options).mode(loadMode.sparkMode)
+          format.write(writer, finalPath.toUri.toString)
+          logger.info(s"Data was successfully written to $finalPath")
+      } match {
+          case Failure(exception) => throw new RuntimeException("Unable to process data", exception)
+          case Success(_) => df
       }
     }
 
@@ -191,24 +200,30 @@ object OutputWriter {
   case class TableWriter(table: String, targetPartitions: Seq[String], options: Map[String, String],
                          loadMode: LoadMode) extends OutputWriter {
 
-    override def write(dfs: DFSWrapper, df: DataFrame): Unit = {
-      logger.info(s"Writing data to table $table")
-      if (loadMode == LoadMode.OverwriteTable) {
-        val spark = df.sparkSession
-        spark.sql(s"TRUNCATE TABLE $table")
+    override def write(dfs: DFSWrapper, df: DataFrame): DataFrame = {
+      Try {
+        logger.info(s"Writing data to table $table")
+        if (loadMode == LoadMode.OverwriteTable) {
+          val spark = df.sparkSession
+          spark.sql(s"TRUNCATE TABLE $table")
+        }
+        getWriter(df).options(options).mode(loadMode.sparkMode).saveAsTable(table)
+      } match {
+        case Failure(exception) => throw exception
+        case Success(_) => df
       }
-      getWriter(df).options(options).mode(loadMode.sparkMode).saveAsTable(table)
+
     }
   }
 
   case class FileSystemWriter(location: String, format: DataFormat, targetPartitions: Seq[String],
                               options: Map[String, String], loadMode: LoadMode) extends AtomicWriter {
 
-    override def write(dfs: DFSWrapper, df: DataFrame): Unit = {
+    override def write(dfs: DFSWrapper, df: DataFrame): DataFrame = {
       writeUnsafe(dfs, df, location, loadMode)
     }
 
-    override def writeWithBackup(dfs: DFSWrapper, df: DataFrame): Unit = {
+    override def writeWithBackup(dfs: DFSWrapper, df: DataFrame): DataFrame = {
       writeSafe(dfs, df, location, loadMode)
     }
   }
@@ -217,25 +232,30 @@ object OutputWriter {
                                  options: Map[String, String], loadMode: LoadMode,
                                  metadataConfiguration: Metadata) extends AtomicWriter {
 
-    override def write(dfs: DFSWrapper, df: DataFrame): Unit = {
+    override def write(dfs: DFSWrapper, df: DataFrame): DataFrame = {
       val spark = df.sparkSession
       val location = getTableLocation(spark)
       writeUnsafe(dfs, df, location, loadMode)
-      if (targetPartitions.nonEmpty){
-        metadataConfiguration.recoverPartitions(df)
-      } else {
-        metadataConfiguration.refreshTable(df)
-      }
+      updatePartitionsMetadata(df)
     }
 
-    override def writeWithBackup(dfs: DFSWrapper, df: DataFrame): Unit = {
+    override def writeWithBackup(dfs: DFSWrapper, df: DataFrame): DataFrame = {
       val spark = df.sparkSession
       val location = getTableLocation(spark)
       writeSafe(dfs, df, location, loadMode)
-      if (targetPartitions.nonEmpty){
-        metadataConfiguration.recoverPartitions(df)
-      } else {
-        metadataConfiguration.refreshTable(df)
+      updatePartitionsMetadata(df)
+    }
+
+    private def updatePartitionsMetadata(df: DataFrame): DataFrame = {
+      Try {
+        if (targetPartitions.nonEmpty) {
+          metadataConfiguration.recoverPartitions(df)
+        } else {
+          metadataConfiguration.refreshTable(df)
+        }
+      } match {
+        case Failure(exception) => throw exception
+        case Success(_) => df
       }
     }
 

@@ -1,6 +1,6 @@
 package com.adidas.analytics.config
 
-import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation}
+import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation, UpdateStatisticsOperation}
 import com.adidas.analytics.config.shared.{ConfigurationContext, DateComponentDerivationConfiguration, MetadataUpdateStrategy}
 import com.adidas.analytics.util.DataFormat.ParquetFormat
 import com.adidas.analytics.util.{DataFormat, InputReader, LoadMode, OutputWriter}
@@ -8,7 +8,9 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{Row, SparkSession}
 
 
-trait DeltaLoadConfiguration extends ConfigurationContext with MetadataUpdateStrategy {
+trait DeltaLoadConfiguration extends ConfigurationContext
+  with UpdateStatisticsOperation
+  with MetadataUpdateStrategy {
 
   protected val activeRecordsTable: String = configReader.getAs[String]("active_records_table_lake")
   protected val deltaRecordsTable: Option[String] = configReader.getAsOption[String]("delta_records_table_lake")
@@ -21,7 +23,12 @@ trait DeltaLoadConfiguration extends ConfigurationContext with MetadataUpdateStr
   protected val recordModeColumnName: String = "recordmode"
   protected val upsertRecordModes: Seq[String] = Seq("", "N")
   protected val upsertRecordsModesFilterFunction: Row => Boolean = { row: Row =>
-    val recordmode = row.getAs[String](recordModeColumnName)
+    var recordmode = ""
+    try {
+      recordmode = row.getAs[String](recordModeColumnName)
+    } catch {
+      case _ => recordmode = row.getAs[String](recordModeColumnName.toUpperCase)
+    }
     recordmode == null || recordmode == "" || recordmode == "N"
   }
 }

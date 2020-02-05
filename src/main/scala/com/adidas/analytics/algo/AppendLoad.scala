@@ -3,8 +3,7 @@ package com.adidas.analytics.algo
 import java.util.regex.Pattern
 
 import com.adidas.analytics.algo.AppendLoad.{logger, _}
-import com.adidas.analytics.algo.core.Algorithm
-import com.adidas.analytics.algo.core.Algorithm.ComputeTableStatisticsOperation
+import com.adidas.analytics.algo.core.{Algorithm, TableStatistics}
 import com.adidas.analytics.config.AppendLoadConfiguration
 import com.adidas.analytics.util.DFSWrapper._
 import com.adidas.analytics.util.DataFormat.{DSVFormat, JSONFormat, ParquetFormat}
@@ -16,11 +15,13 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{StructType, _}
 import org.slf4j.{Logger, LoggerFactory}
 
+import scala.collection.immutable
+
 /**
   * Performs append load of new records to an existing table.
   */
 final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, val configLocation: String)
-  extends Algorithm with AppendLoadConfiguration with ComputeTableStatisticsOperation{
+  extends Algorithm with AppendLoadConfiguration with TableStatistics {
 
   override protected def read(): Vector[DataFrame] = {
     readInputData(targetSchema, spark, dfs)
@@ -30,11 +31,21 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
     dataFrames.map(df => df.transform(addtargetPartitions(columnToRegexPairs, targetSchema)))
   }
 
-  override protected def write(dataFrames: Vector[DataFrame]): Unit = {
+  override protected def write(dataFrames: Vector[DataFrame]): Vector[DataFrame] = {
     writeHeaders(dataFrames, targetPartitions, headerDir, dfs)
     super.write(dataFrames)
     if (computeTableStatistics && dataType == STRUCTURED)
       computeStatisticsForTable(targetTable)
+  }
+
+  override protected def updateStatistics(dataFrames: Vector[DataFrame]): Unit = {
+    if (computeTableStatistics && dataType == STRUCTURED && targetTable.isDefined) {
+      if (targetPartitions.nonEmpty) {
+        dataFrames.foreach(df => computeStatisticsForTablePartitions(df, targetTable.get, targetPartitions))
+      }
+      computeStatisticsForTable(targetTable)
+    }
+
   }
 
   private def readInputData(targetSchema: StructType, spark: SparkSession, dfs: DFSWrapper): Vector[DataFrame] = {
@@ -54,7 +65,7 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
       buildHeaderFilePath(columnToRegexPairs, targetSchema, extractPathWithoutServerAndProtocol(inputPath.toString), headerDirPath)
     }
 
-    def getMapSchemaStructToPath = {
+    def getMapSchemaStructToPath: immutable.Iterable[Source] = {
       val mapSchemaStructToPath = groupedHeaderPathAndSourcePaths.toSeq.map { case (headerPath, sourcePaths) =>
         getSchemaFromHeaderOrSource(fs, headerPath, sourcePaths, targetSchemaWithouttargetPartitions)
       }.groupBy(_._1).map { case (k, v) => (k, v.flatMap(_._2)) }
@@ -71,7 +82,7 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
       }
     }
 
-    val schemaAndSourcePath = if(!verifySchema) {
+    val schemaAndSourcePath = if (!verifySchema) {
       groupedHeaderPathAndSourcePaths.flatMap { case (headerPath, sourcePaths) =>
         val schema = if (fs.exists(headerPath)) loadHeader(headerPath, fs) else targetSchemaWithouttargetPartitions
         sourcePaths.map { sourcePath =>
@@ -84,9 +95,10 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
     schemaAndSourcePath.toSeq
   }
 
-  private def getSchemaFromHeaderOrSource(fs: FileSystem, headerPath: Path, sourcePaths: Seq[Path], targetSchemaWithouttargetPartitions: StructType): (StructType, Seq[Path]) ={
-    val schema = if (fs.exists(headerPath)){
-      loadHeader(headerPath, fs) }
+  private def getSchemaFromHeaderOrSource(fs: FileSystem, headerPath: Path, sourcePaths: Seq[Path], targetSchemaWithouttargetPartitions: StructType): (StructType, Seq[Path]) = {
+    val schema = if (fs.exists(headerPath)) {
+      loadHeader(headerPath, fs)
+    }
     else {
       inferSchemaFromSource(sourcePaths)
     }
@@ -105,10 +117,10 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
   }
 
   private def matchingSchemas_?(schemaFromInputData: StructType, targetSchema: StructType, paths: Seq[Path]): Boolean = {
-    val inputColumnsVector =  schemaFromInputData.names.toVector
-    val targetColumnsVector =  targetSchema.names.toVector
+    val inputColumnsVector = schemaFromInputData.names.toVector
+    val targetColumnsVector = targetSchema.names.toVector
     val diff = inputColumnsVector.diff(targetColumnsVector)
-    if(diff.nonEmpty)
+    if (diff.nonEmpty)
       logger.error(s"Inferred schema does not match the target schema for ${paths.toString}")
     diff.isEmpty
   }
@@ -220,4 +232,5 @@ object AppendLoad {
   }
 
   protected case class Source(schema: StructType, inputFileLocation: String)
+
 }

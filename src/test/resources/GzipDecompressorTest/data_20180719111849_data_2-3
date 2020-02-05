@@ -1,8 +1,8 @@
-salesorder|item|recordmode|date|customer|article|amount|year|month|day|hash
-3|1||20170215|customer1|article6|200|2017|2|15|30e1eec7c39412d7e56d5b6f928cfe9383573a387cb946a98b0aaab73ec0e1da
-3|2||20170215|customer1|article2|120|2017|2|15|ac1cc0b2f83e8dc39f6afb958d7299e2d63a3c007e7a63c1be9e58c3b651d1f4
-3|3||20170215|customer1|article4|90|2017|2|15|8a4d62f2dee53c2b09361034aea44e51b4a64421839abd637698e745c0e74c09
-4|1||20170430|customer2|article3|80|2017|4|30|eb0f66b612de9208f3c5e10c6c1ed449a19ef423db4c6bbbf9c50b234515e22e
-4|2||20170430|customer2|article7|70|2017|4|30|83e7bca789f2eddb132938f37dbf8c70f4d015d1eac33fe577f6dceb48864976
-4|3||20170430|customer2|article1|30|2017|4|30|68ce3936cc5df6b521cf681423b8acd2fb0bf652199d2661c88321cbdef61ae1
-4|4||20170430|customer2|article2|50|2017|4|30|2f8ea87a583752f80836a1dbf67686b14c0296a5f88f924e657cf2aea3ae4261
+salesorder|item|recordmode|date|customer|article|amount|year|month|day
+3|1||20170215|customer1|article6|200|2017|2|15
+3|2||20170215|customer1|article2|120|2017|2|15
+3|3||20170215|customer1|article4|90|2017|2|15
+4|1||20170430|customer2|article3|80|2017|4|30
+4|2||20170430|customer2|article7|70|2017|4|30
+4|3||20170430|customer2|article1|30|2017|4|30
+4|4||20170430|customer2|article2|50|2017|4|30

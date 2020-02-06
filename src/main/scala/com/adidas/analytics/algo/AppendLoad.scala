@@ -34,8 +34,6 @@ final class AppendLoad protected(val spark: SparkSession, val dfs: DFSWrapper, v
   override protected def write(dataFrames: Vector[DataFrame]): Vector[DataFrame] = {
     writeHeaders(dataFrames, targetPartitions, headerDir, dfs)
     super.write(dataFrames)
-    if (computeTableStatistics && dataType == STRUCTURED)
-      computeStatisticsForTable(targetTable)
   }
 
   override protected def updateStatistics(dataFrames: Vector[DataFrame]): Unit = {

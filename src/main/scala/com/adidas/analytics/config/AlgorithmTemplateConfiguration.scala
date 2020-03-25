@@ -1,6 +1,6 @@
 package com.adidas.analytics.config
 
-import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation}
+import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation, UpdateStatisticsOperation}
 import com.adidas.analytics.config.AlgorithmTemplateConfiguration.ruleToLocalDate
 import com.adidas.analytics.config.shared.{ConfigurationContext, MetadataUpdateStrategy}
 import com.adidas.analytics.util.DataFormat.ParquetFormat
@@ -14,6 +14,7 @@ import org.joda.time.{Days, LocalDate}
 trait AlgorithmTemplateConfiguration extends ConfigurationContext
   with ReadOperation
   with SafeWriteOperation
+  with UpdateStatisticsOperation
   with MetadataUpdateStrategy {
 
   protected def spark: SparkSession

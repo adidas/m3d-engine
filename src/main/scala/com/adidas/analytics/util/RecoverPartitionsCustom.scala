@@ -1,0 +1,32 @@
+package com.adidas.analytics.util
+
+import com.adidas.analytics.algo.core.{PartitionHelpers, Metadata}
+import org.apache.spark.sql._
+
+import scala.collection.JavaConversions._
+
+case class RecoverPartitionsCustom(override val tableName: String,
+                                   override val targetPartitions: Seq[String]) extends Metadata with PartitionHelpers{
+
+  override def recoverPartitions(outputDataFrame: DataFrame): Unit = {
+    val spark: SparkSession = outputDataFrame.sparkSession
+
+    val distinctPartitions: DataFrame = getDistinctPartitions(outputDataFrame, targetPartitions)
+
+    generateAddPartitionStatements(distinctPartitions)
+      .collectAsList()
+      .foreach((statement: String) => spark.sql(statement))
+
+  }
+
+  private def generateAddPartitionStatements(df: DataFrame): Dataset[String] = {
+    df.map(partitionValue => {
+      val partitionStatementValues: Seq[String] = targetPartitions
+        .map(partitionColumn => s"${partitionColumn}=${getParameterValue(partitionValue, partitionColumn)}")
+
+      s"ALTER TABLE ${tableName} ADD IF NOT EXISTS PARTITION(${partitionStatementValues.mkString(",")})"
+    })(Encoders.STRING)
+  }
+
+
+}

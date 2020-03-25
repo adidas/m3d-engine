@@ -2,7 +2,10 @@ package com.adidas.analytics.algo.core
 
 import org.apache.spark.sql.DataFrame
 
-
+/**
+  * This is a generic trait for all strategies that will
+  * add new partitions on metadata table
+  */
 trait Metadata {
 
   protected val tableName: String

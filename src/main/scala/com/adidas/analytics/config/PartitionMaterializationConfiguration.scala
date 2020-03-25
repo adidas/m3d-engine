@@ -1,6 +1,6 @@
 package com.adidas.analytics.config
 
-import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation}
+import com.adidas.analytics.algo.core.Algorithm.{ReadOperation, SafeWriteOperation, UpdateStatisticsOperation}
 import com.adidas.analytics.config.shared.MetadataUpdateStrategy
 import com.adidas.analytics.util.DataFormat.ParquetFormat
 import com.adidas.analytics.util.DataFrameUtils.PartitionCriteria
@@ -13,6 +13,7 @@ import org.joda.time.format.DateTimeFormat
 
 trait PartitionMaterializationConfiguration extends ReadOperation
   with SafeWriteOperation
+  with UpdateStatisticsOperation
   with MetadataUpdateStrategy {
 
   protected def configReader: ConfigReader

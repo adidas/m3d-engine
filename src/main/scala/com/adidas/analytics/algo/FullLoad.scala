@@ -2,8 +2,8 @@ package com.adidas.analytics.algo
 
 import com.adidas.analytics.config.FullLoadConfiguration
 import com.adidas.analytics.algo.FullLoad._
-import com.adidas.analytics.algo.core.Algorithm
-import com.adidas.analytics.algo.core.Algorithm.{ComputeTableStatisticsOperation, WriteOperation}
+import com.adidas.analytics.algo.core.{Algorithm, TableStatistics}
+import com.adidas.analytics.algo.core.Algorithm.WriteOperation
 import com.adidas.analytics.algo.shared.DateComponentDerivation
 import com.adidas.analytics.util.DFSWrapper._
 import com.adidas.analytics.util.DataFormat.{DSVFormat, ParquetFormat}
@@ -16,7 +16,7 @@ import scala.util.{Failure, Success, Try}
 
 
 final class FullLoad protected(val spark: SparkSession, val dfs: DFSWrapper, val configLocation: String)
-  extends Algorithm with WriteOperation with FullLoadConfiguration with DateComponentDerivation  with ComputeTableStatisticsOperation{
+  extends Algorithm with WriteOperation with FullLoadConfiguration with DateComponentDerivation  with TableStatistics {
 
   val currentHdfsDir: String = HiveTableAttributeReader(targetTable, spark).getTableLocation
 
@@ -36,7 +36,7 @@ final class FullLoad protected(val spark: SparkSession, val dfs: DFSWrapper, val
     withDatePartitions(dataFrames)
   }
 
-  override protected def write(dataFrames: Vector[DataFrame]): Unit = {
+  override protected def write(dataFrames: Vector[DataFrame]): Vector[DataFrame] = {
     Try{
       super.write(dataFrames)
     } match {
@@ -46,11 +46,20 @@ final class FullLoad protected(val spark: SparkSession, val dfs: DFSWrapper, val
         recoverFailedWrite()
         cleanupDirectory(backupDir)
         throw new RuntimeException(exception.getMessage)
-      case Success(_) =>
+      case Success(outputDaframe) =>
         restoreTable()
-        if (computeTableStatistics && dataType == STRUCTURED)
-          computeStatisticsForTable(Option(targetTable))
+        outputDaframe
     }
+
+  }
+
+  override protected def updateStatistics(dataFrames: Vector[DataFrame]): Unit = {
+      if (computeTableStatistics && dataType == STRUCTURED) {
+        if(targetPartitions.nonEmpty) {
+          dataFrames.foreach(df => computeStatisticsForTablePartitions(df,targetTable, targetPartitions))
+        }
+        computeStatisticsForTable(Option(targetTable))
+      }
 
   }
 

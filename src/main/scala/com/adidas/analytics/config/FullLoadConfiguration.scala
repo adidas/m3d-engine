@@ -4,7 +4,7 @@ import com.adidas.analytics.config.shared.{ConfigurationContext, DateComponentDe
 import com.adidas.analytics.util.DataFormat.ParquetFormat
 import com.adidas.analytics.util.{LoadMode, OutputWriter}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.util.PermissiveMode
+import org.apache.spark.sql.catalyst.util.FailFastMode
 import org.apache.spark.sql.types.StructType
 
 
@@ -38,5 +38,5 @@ trait FullLoadConfiguration extends ConfigurationContext with LoadConfiguration 
     super.readNullValue.orElse(Some("XXNULLXXX"))
   }
 
-  override def loadMode: String = readerModeSetter(PermissiveMode.name)
+  override def loadMode: String = readerModeSetter(FailFastMode.name)
 }

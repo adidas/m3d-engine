@@ -28,6 +28,3 @@ object LoadMode {
     override def sparkMode: SaveMode = SaveMode.Append
   }
 }
-
-
-

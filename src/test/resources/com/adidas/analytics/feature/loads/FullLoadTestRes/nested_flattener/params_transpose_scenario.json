@@ -1,0 +1,267 @@
+{
+  "base_data_dir": "data/",
+  "backup_dir": "/tmp/tests/test_lake/test/test_table/data_backup/",
+  "current_dir": "/tmp/tests/test_lake/test/test_table/data/",
+  "delimiter": "|",
+  "file_format": "json",
+  "has_header": false,
+  "partition_column": "",
+  "partition_column_format": "",
+  "target_partitions": [],
+  "source_dir": "/tmp/tests/test_landing/test/test_table/data",
+  "target_table": "test_lake.test_table",
+  "is_multiline_json": true,
+  "additional_task": {
+    "nested_task_properties" : {
+      "side_flatten": {
+        "rows__clustering": ["articleNo__0","FactoryID__1"]
+      },
+      "chars_to_replace": "[.:#]+",
+      "replacement_char": "_",
+      "fields_to_flatten": [
+        "partition",
+        "partition__key",
+        "rows",
+        "rows__clustering",
+        "rows__cells",
+        "rows__type"
+      ],
+      "column_mapping": {
+        "partition__key": "product",
+        "rows__clustering": "cluster",
+        "rows__type": "factory_id",
+        "rows__cells__name": "name",
+        "rows__cells__value": "value",
+        "articleNo": "articleNo",
+        "FactoryID": "FactoryID"
+      }
+    },
+    "transpose_task_properties": {
+      "aggregation_column" : "value",
+      "pivot_column": "name",
+      "group_by_column": ["product", "articleNo","FactoryID"]
+    },
+    "enforce_schema": true
+  },
+  "schema": {
+    "type": "struct",
+    "fields": [
+      {
+        "name": "partition",
+        "type": {
+          "type": "struct",
+          "fields": [
+            {
+              "name": "key",
+              "type": {
+                "type": "array",
+                "elementType": "string",
+                "containsNull": true
+              },
+              "nullable": true,
+              "metadata": {}
+            },
+            {
+              "name": "position",
+              "type": "long",
+              "nullable": true,
+              "metadata": {}
+            }
+          ]
+        },
+        "nullable": true,
+        "metadata": {}
+      },
+      {
+        "name": "rows",
+        "type": {
+          "type": "array",
+          "elementType": {
+            "type": "struct",
+            "fields": [
+              {
+                "name": "cells",
+                "type": {
+                  "type": "array",
+                  "elementType": {
+                    "type": "struct",
+                    "fields": [
+                      {
+                        "name": "deletion_info",
+                        "type": {
+                          "type": "struct",
+                          "fields": [
+                            {
+                              "name": "local_delete_time",
+                              "type": "string",
+                              "nullable": true,
+                              "metadata": {}
+                            }
+                          ]
+                        },
+                        "nullable": true,
+                        "metadata": {}
+                      },
+                      {
+                        "name": "name",
+                        "type": "string",
+                        "nullable": true,
+                        "metadata": {}
+                      },
+                      {
+                        "name": "value",
+                        "type": "string",
+                        "nullable": true,
+                        "metadata": {}
+                      }
+                    ]
+                  },
+                  "containsNull": true
+                },
+                "nullable": true,
+                "metadata": {}
+              },
+              {
+                "name": "clustering",
+                "type": {
+                  "type": "array",
+                  "elementType": "string",
+                  "containsNull": true
+                },
+                "nullable": true,
+                "metadata": {}
+              },
+              {
+                "name": "end",
+                "type": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "clustering",
+                      "type": {
+                        "type": "array",
+                        "elementType": "string",
+                        "containsNull": true
+                      },
+                      "nullable": true,
+                      "metadata": {}
+                    },
+                    {
+                      "name": "deletion_info",
+                      "type": {
+                        "type": "struct",
+                        "fields": [
+                          {
+                            "name": "local_delete_time",
+                            "type": "string",
+                            "nullable": true,
+                            "metadata": {}
+                          },
+                          {
+                            "name": "marked_deleted",
+                            "type": "string",
+                            "nullable": true,
+                            "metadata": {}
+                          }
+                        ]
+                      },
+                      "nullable": true,
+                      "metadata": {}
+                    },
+                    {
+                      "name": "type",
+                      "type": "string",
+                      "nullable": true,
+                      "metadata": {}
+                    }
+                  ]
+                },
+                "nullable": true,
+                "metadata": {}
+              },
+              {
+                "name": "liveness_info",
+                "type": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "tstamp",
+                      "type": "string",
+                      "nullable": true,
+                      "metadata": {}
+                    }
+                  ]
+                },
+                "nullable": true,
+                "metadata": {}
+              },
+              {
+                "name": "position",
+                "type": "long",
+                "nullable": true,
+                "metadata": {}
+              },
+              {
+                "name": "start",
+                "type": {
+                  "type": "struct",
+                  "fields": [
+                    {
+                      "name": "clustering",
+                      "type": {
+                        "type": "array",
+                        "elementType": "string",
+                        "containsNull": true
+                      },
+                      "nullable": true,
+                      "metadata": {}
+                    },
+                    {
+                      "name": "deletion_info",
+                      "type": {
+                        "type": "struct",
+                        "fields": [
+                          {
+                            "name": "local_delete_time",
+                            "type": "string",
+                            "nullable": true,
+                            "metadata": {}
+                          },
+                          {
+                            "name": "marked_deleted",
+                            "type": "string",
+                            "nullable": true,
+                            "metadata": {}
+                          }
+                        ]
+                      },
+                      "nullable": true,
+                      "metadata": {}
+                    },
+                    {
+                      "name": "type",
+                      "type": "string",
+                      "nullable": true,
+                      "metadata": {}
+                    }
+                  ]
+                },
+                "nullable": true,
+                "metadata": {}
+              },
+              {
+                "name": "type",
+                "type": "string",
+                "nullable": true,
+                "metadata": {}
+              }
+            ]
+          },
+          "containsNull": true
+        },
+        "nullable": true,
+        "metadata": {}
+      }
+    ]
+  }
+}

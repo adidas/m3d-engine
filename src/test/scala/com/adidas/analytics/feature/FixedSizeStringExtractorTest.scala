@@ -6,13 +6,13 @@ import com.adidas.analytics.util.{DFSWrapper, LoadMode}
 import com.adidas.utils.{BaseAlgorithmTest, FileReader, Table}
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.types.{DataType, StructType}
-import org.scalatest.FeatureSpec
-import org.scalatest.Matchers._
+import org.scalatest.featurespec.AnyFeatureSpec
+import org.scalatest.matchers.should.Matchers._
 
-
-class FixedSizeStringExtractorTest extends FeatureSpec with BaseAlgorithmTest {
+class FixedSizeStringExtractorTest extends AnyFeatureSpec with BaseAlgorithmTest {
 
   private val paramsFileName: String = "params.json"
+
   private val paramsFileHdfsPath: Path = new Path(hdfsRootTestPath, paramsFileName)
 
   private val database: String = "test_lake"
@@ -22,9 +22,10 @@ class FixedSizeStringExtractorTest extends FeatureSpec with BaseAlgorithmTest {
   private var sourceTable: Table = _
   private var targetTable: Table = _
 
-
-  feature("Fixed-size string can be extractor from the input table and stored to the output table") {
-    scenario("Extracted strings match to the target schema") {
+  Feature(
+    "Fixed-size string can be extractor from the input table and stored to the output table"
+  ) {
+    Scenario("Extracted strings match to the target schema") {
       val testResourceDir = "matched_schema"
       prepare(testResourceDir)
 
@@ -37,7 +38,8 @@ class FixedSizeStringExtractorTest extends FeatureSpec with BaseAlgorithmTest {
 
       // read  expected data
       val testDataReader = FileReader.newDSVFileReader(Some(targetTable.schema))
-      val expectedDataLocation = resolveResource(s"$testResourceDir/lake_data_post.psv", withProtocol = true)
+      val expectedDataLocation =
+        resolveResource(s"$testResourceDir/lake_data_post.psv", withProtocol = true)
       val expectedDf = testDataReader.read(spark, expectedDataLocation)
 
       // compare the result
@@ -45,7 +47,9 @@ class FixedSizeStringExtractorTest extends FeatureSpec with BaseAlgorithmTest {
       actualDf.hasDiff(expectedDf) shouldBe false
     }
 
-    scenario("Number of string to extract is less than the number of non-partition fields in the target schema") {
+    Scenario(
+      "Number of string to extract is less than the number of non-partition fields in the target schema"
+    ) {
       val testResourceDir = "non_matched_schema1"
       prepare(testResourceDir, initialData = false)
 
@@ -57,7 +61,9 @@ class FixedSizeStringExtractorTest extends FeatureSpec with BaseAlgorithmTest {
       caught.getMessage shouldBe "Field positions do not correspond to the target schema"
     }
 
-    scenario("Number of string to extract is greater than the number of non-partition fields in the target schema") {
+    Scenario(
+      "Number of string to extract is greater than the number of non-partition fields in the target schema"
+    ) {
       val testResourceDir = "non_matched_schema2"
       prepare(testResourceDir, initialData = false)
 
@@ -69,7 +75,7 @@ class FixedSizeStringExtractorTest extends FeatureSpec with BaseAlgorithmTest {
       caught.getMessage shouldBe "Field positions do not correspond to the target schema"
     }
 
-    scenario("Data matches to the schema and partitioning type is year/month") {
+    Scenario("Data matches to the schema and partitioning type is year/month") {
       val testResourceDir = "matched_schema_partitioned"
       prepare(testResourceDir, Seq("year", "month"))
 
@@ -82,7 +88,8 @@ class FixedSizeStringExtractorTest extends FeatureSpec with BaseAlgorithmTest {
 
       // read  expected data
       val testDataReader = FileReader.newDSVFileReader(Some(targetTable.schema))
-      val expectedDataLocation = resolveResource(s"$testResourceDir/lake_data_post.psv", withProtocol = true)
+      val expectedDataLocation =
+        resolveResource(s"$testResourceDir/lake_data_post.psv", withProtocol = true)
       val expectedDf = testDataReader.read(spark, expectedDataLocation)
 
       // compare the result
@@ -97,19 +104,37 @@ class FixedSizeStringExtractorTest extends FeatureSpec with BaseAlgorithmTest {
     spark.sql(s"CREATE DATABASE $database")
   }
 
-  private def createTable(tableName: String, database: String, schema: StructType, targetPartitions: Seq[String]): Table = {
-    val table = Table.newBuilder(tableName, database, fs.makeQualified(new Path(hdfsRootTestPath, tableName)).toString, schema)
+  private def createTable(
+      tableName: String,
+      database: String,
+      schema: StructType,
+      targetPartitions: Seq[String]
+  ): Table = {
+    val table = Table.newBuilder(
+      tableName,
+      database,
+      fs.makeQualified(new Path(hdfsRootTestPath, tableName)).toString,
+      schema
+    )
 
-    if (targetPartitions.nonEmpty) {
-      table.withPartitions(targetPartitions).buildParquetTable(DFSWrapper(fs.getConf), spark, external = true)
-    } else {
-      table.buildParquetTable(DFSWrapper(fs.getConf), spark, external = true)
-    }
+    if (targetPartitions.nonEmpty)
+      table
+        .withPartitions(targetPartitions)
+        .buildParquetTable(DFSWrapper(fs.getConf), spark, external = true)
+    else table.buildParquetTable(DFSWrapper(fs.getConf), spark, external = true)
   }
 
-  private def prepare(testResourceDir: String, targetPartitions: Seq[String] = Seq.empty, initialData: Boolean = true): Unit = {
-    val sourceSchema = DataType.fromJson(getResourceAsText(s"$testResourceDir/source_schema.json")).asInstanceOf[StructType]
-    val targetSchema = DataType.fromJson(getResourceAsText(s"$testResourceDir/target_schema.json")).asInstanceOf[StructType]
+  private def prepare(
+      testResourceDir: String,
+      targetPartitions: Seq[String] = Seq.empty,
+      initialData: Boolean = true
+  ): Unit = {
+    val sourceSchema = DataType
+      .fromJson(getResourceAsText(s"$testResourceDir/source_schema.json"))
+      .asInstanceOf[StructType]
+    val targetSchema = DataType
+      .fromJson(getResourceAsText(s"$testResourceDir/target_schema.json"))
+      .asInstanceOf[StructType]
 
     // copy job parameters to HDFS
     copyResourceFileToHdfs(s"$testResourceDir/$paramsFileName", paramsFileHdfsPath)

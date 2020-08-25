@@ -1,0 +1,42 @@
+{
+  "base_data_dir": "data/",
+  "backup_dir": "/tmp/tests/test_lake/test/test_table/data_backup/",
+  "current_dir": "/tmp/tests/test_lake/test/test_table/data/",
+  "delimiter": "|",
+  "file_format": "json",
+  "has_header": false,
+  "partition_column": "",
+  "partition_column_format": "",
+  "target_partitions": [],
+  "source_dir": "/tmp/tests/test_landing/test/test_table/data",
+  "target_table": "test_lake.test_table",
+  "additional_task": {
+    "nested_task_properties" : {
+      "chars_to_replace": "[.:#]+",
+      "replacement_char": "_",
+      "fields_to_flatten": [
+        "id",
+        "id__spot",
+        "line",
+        "line__kind",
+        "line",
+        "line__begin",
+        "line__begin__country",
+        "line",
+        "line__begin",
+        "line__begin__dinfo",
+        "line__begin__dinfo__out_sale",
+        "line",
+        "line__mobile",
+        "line__mobile__add"
+      ],
+      "column_mapping": {
+        "id__spot": "id",
+        "line__kind": "kind",
+        "line__begin__country": "country",
+        "line__begin__dinfo__out_sale" : "dinfo",
+        "line__mobile__add": "mobile"
+      }
+    }
+  }
+}

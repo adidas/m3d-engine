@@ -1,0 +1,23 @@
+*.class
+*.log
+*.iml
+.idea/*
+
+# sbt specific
+.cache/
+.history/
+.lib/
+dist/*
+project/project/
+project/target/
+src/main/java/
+src/main/resources/
+src/main/scala-2.10/
+src/test/java/
+src/test/scala-2.10/
+target/
+metastore_db/
+
+# Scala-IDE specific
+.scala_dependencies
+.worksheet

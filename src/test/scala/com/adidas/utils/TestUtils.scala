@@ -14,7 +14,8 @@ object TestUtils {
       }
 
       val groupedDf = df.groupBy(df.columns.map(col): _*).agg(count(lit(1))).collect().toSet
-      val groupedAnotherDf = anotherDf.groupBy(anotherDf.columns.map(col): _*).agg(count(lit(1))).collect().toSet
+      val groupedAnotherDf =
+        anotherDf.groupBy(anotherDf.columns.map(col): _*).agg(count(lit(1))).collect().toSet
 
       groupedDf.diff(groupedAnotherDf).foreach(printDiff(incoming = true))
       groupedAnotherDf.diff(groupedDf).foreach(printDiff(incoming = false))

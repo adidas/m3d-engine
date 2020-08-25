@@ -5,18 +5,20 @@ import com.adidas.utils.SparkSessionWrapper
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 import org.apache.spark.sql.{Dataset, Row}
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers, PrivateMethodTester}
+import org.scalatest.{BeforeAndAfterAll, PrivateMethodTester}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 
-import scala.collection.JavaConverters._
-
-class RecoverPartitionsCustomTest extends FunSuite
-  with SparkSessionWrapper
-  with PrivateMethodTester
-  with Matchers
-  with BeforeAndAfterAll{
+class RecoverPartitionsCustomTest
+    extends AnyFunSuite
+    with SparkSessionWrapper
+    with PrivateMethodTester
+    with Matchers
+    with BeforeAndAfterAll {
 
   test("test conversion of String Value to HiveQL Partition Parameter") {
-    val customSparkRecoverPartitions = RecoverPartitionsCustom(tableName="", targetPartitions = Seq())
+    val customSparkRecoverPartitions =
+      RecoverPartitionsCustom(tableName = "", targetPartitions = Seq())
     val createParameterValue = PrivateMethod[String]('createParameterValue)
     val result = customSparkRecoverPartitions invokePrivate createParameterValue("theValue")
 
@@ -24,42 +26,46 @@ class RecoverPartitionsCustomTest extends FunSuite
   }
 
   test("test conversion of Short Value to HiveQL Partition Parameter") {
-    val customSparkRecoverPartitions = RecoverPartitionsCustom(tableName="", targetPartitions = Seq())
+    val customSparkRecoverPartitions =
+      RecoverPartitionsCustom(tableName = "", targetPartitions = Seq())
     val createParameterValue = PrivateMethod[String]('createParameterValue)
-    val result = customSparkRecoverPartitions invokePrivate createParameterValue(java.lang.Short.valueOf("2"))
+    val result = customSparkRecoverPartitions invokePrivate
+      createParameterValue(java.lang.Short.valueOf("2"))
 
     result should be("2")
   }
 
   test("test conversion of Integer Value to HiveQL Partition Parameter") {
-    val customSparkRecoverPartitions = RecoverPartitionsCustom(tableName="", targetPartitions = Seq())
+    val customSparkRecoverPartitions =
+      RecoverPartitionsCustom(tableName = "", targetPartitions = Seq())
     val createParameterValue = PrivateMethod[String]('createParameterValue)
-    val result = customSparkRecoverPartitions invokePrivate createParameterValue(java.lang.Integer.valueOf("4"))
+    val result = customSparkRecoverPartitions invokePrivate
+      createParameterValue(java.lang.Integer.valueOf("4"))
 
     result should be("4")
   }
 
   test("test conversion of null Value to HiveQL Partition Parameter") {
-    val customSparkRecoverPartitions = RecoverPartitionsCustom(tableName="", targetPartitions = Seq())
+    val customSparkRecoverPartitions =
+      RecoverPartitionsCustom(tableName = "", targetPartitions = Seq())
     val createParameterValue = PrivateMethod[String]('createParameterValue)
-    an [Exception] should be thrownBy {
+    an[Exception] should be thrownBy {
       customSparkRecoverPartitions invokePrivate createParameterValue(null)
     }
   }
 
   test("test conversion of not supported Value to HiveQL Partition Parameter") {
-    val customSparkRecoverPartitions = RecoverPartitionsCustom(tableName="", targetPartitions = Seq())
+    val customSparkRecoverPartitions =
+      RecoverPartitionsCustom(tableName = "", targetPartitions = Seq())
     val createParameterValue = PrivateMethod[String]('createParameterValue)
-    an [Exception] should be thrownBy {
+    an[Exception] should be thrownBy {
       customSparkRecoverPartitions invokePrivate createParameterValue(false)
     }
   }
 
   test("test HiveQL statements Generation") {
-    val customSparkRecoverPartitions = RecoverPartitionsCustom(
-      tableName="test",
-      targetPartitions = Seq("country","district")
-    )
+    val customSparkRecoverPartitions =
+      RecoverPartitionsCustom(tableName = "test", targetPartitions = Seq("country", "district"))
 
     val rowsInput = Seq(
       Row(1, "portugal", "porto"),
@@ -85,15 +91,13 @@ class RecoverPartitionsCustomTest extends FunSuite
 
     val createParameterValue = PrivateMethod[Dataset[String]]('generateAddPartitionStatements)
 
-    val producedStatements: Seq[String] = (customSparkRecoverPartitions invokePrivate createParameterValue(testDataset))
-      .collectAsList()
-      .asScala
+    val producedStatements: Seq[String] =
+      (customSparkRecoverPartitions invokePrivate createParameterValue(testDataset))
+        .collect()
 
     expectedStatements.sorted.toSet should equal(producedStatements.sorted.toSet)
   }
 
-  override def afterAll(): Unit = {
-    spark.stop()
-  }
+  override def afterAll(): Unit = spark.stop()
 
 }

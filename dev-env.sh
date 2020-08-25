@@ -6,31 +6,35 @@ SCRIPT_NAME="dev-env.sh"
 PROJECT_NAME="m3d-engine"
 CONTAINER_IMAGE_NAME="$PROJECT_NAME"
 
-PARAM_WORKSPACE=(    "workspace"   "w" "m3d-engine code directory (must be the same within the container life-cycle)")
-PARAM_TEST_FILTER=(  "test-filter" "f" "filter string for selecting specific tests when testing the code with sbt")
-OPTION_HELP=(        "help"        "h" "show help message for the command")
-OPTION_DEBUG=(       "debug"       "d" "start containers or run tests in debug mode (must be the same within the container life-cycle)")
-OPTION_INTERACTIVE=( "interactive" "i" "use interactive mode and allocate pseudo-TTY when executing a command inside the container")
+PARAM_WORKSPACE=("workspace" "w" "m3d-engine code directory (must be the same within the container life-cycle)")
+PARAM_TEST_FILTER=("test-filter" "f" "filter string for selecting specific tests when testing the code with sbt")
+OPTION_HELP=("help" "h" "show help message for the command")
+OPTION_DEBUG=("debug" "d" "start containers or run tests in debug mode (must be the same within the container life-cycle)")
+OPTION_INTERACTIVE=("interactive" "i" "use interactive mode and allocate pseudo-TTY when executing a command inside the container")
 
-ARG_ACTION_IMAGE_BUILD=(       "image-build"       "build the docker image")
-ARG_ACTION_CONTAINER_RUN=(     "container-run"     "run a container from the docker image")
-ARG_ACTION_CONTAINER_EXECUTE=( "container-execute" "execute an external command within the container")
-ARG_ACTION_CONTAINER_STOP=(    "container-stop"    "stop the container")
-ARG_ACTION_CONTAINER_DELETE=(  "container-delete"  "delete the container")
-ARG_ACTION_PROJECT_ASSEMBLE=(  "project-assemble"  "build the code and create a jar-file")
-ARG_ACTION_PROJECT_TEST=(      "project-test"      "run tests within the container")
-ARG_ACTION_PROJECT_CLEAN=(     "project-clean"     "clean pyc-files in the project directory")
-ARG_COMMAND=(                  "command"           "command to execute within the container")
+ARG_ACTION_IMAGE_BUILD=("image-build" "build the docker image")
+ARG_ACTION_CONTAINER_RUN=("container-run" "run a container from the docker image")
+ARG_ACTION_CONTAINER_EXECUTE=("container-execute" "execute an external command within the container")
+ARG_ACTION_CONTAINER_STOP=("container-stop" "stop the container")
+ARG_ACTION_CONTAINER_DELETE=("container-delete" "delete the container")
+ARG_ACTION_PROJECT_FORMAT=("project-format" "format the code")
+ARG_ACTION_PROJECT_LINT=("project-lint" "lint code")
+ARG_ACTION_PROJECT_ASSEMBLE=("project-assemble" "build the code and create a jar-file")
+ARG_ACTION_PROJECT_TEST=("project-test" "run tests within the container")
+ARG_ACTION_PROJECT_CLEAN=("project-clean" "clean pyc-files in the project directory")
+ARG_COMMAND=("command" "command to execute within the container")
 
-AVAILABLE_ACTIONS=(\
-    "$ARG_ACTION_IMAGE_BUILD" \
-    "$ARG_ACTION_CONTAINER_RUN" \
-    "$ARG_ACTION_CONTAINER_EXECUTE" \
-    "$ARG_ACTION_CONTAINER_STOP" \
-    "$ARG_ACTION_CONTAINER_DELETE" \
-    "$ARG_ACTION_PROJECT_ASSEMBLE" \
-    "$ARG_ACTION_PROJECT_TEST" \
-    "$ARG_ACTION_PROJECT_CLEAN" \
+AVAILABLE_ACTIONS=(
+  "$ARG_ACTION_IMAGE_BUILD"
+  "$ARG_ACTION_CONTAINER_RUN"
+  "$ARG_ACTION_CONTAINER_EXECUTE"
+  "$ARG_ACTION_CONTAINER_STOP"
+  "$ARG_ACTION_CONTAINER_DELETE"
+  "$ARG_ACTION_PROJECT_FORMAT"
+  "$ARG_ACTION_PROJECT_LINT"
+  "$ARG_ACTION_PROJECT_ASSEMBLE"
+  "$ARG_ACTION_PROJECT_TEST"
+  "$ARG_ACTION_PROJECT_CLEAN"
 )
 
 source "./common.sh"
@@ -112,24 +116,30 @@ fi
 OTHER_ARGS=()
 while [[ $# -gt 0 ]]; do
   case $1 in
-    -w|--workspace)
-      shift
-      validate_args_non_empty "$HELP_STRING" "$@"
-      WORKSPACE="$1";;
-    -f|--test-filter)
-      shift
-      validate_args_non_empty "$HELP_STRING" "$@"
-      validate_possible_values "$HELP_STRING" "$PARAM_TEST_FILTER" "${ACTION_AVAILABLE_ARGS[@]}"
-      TEST_FILTER="$1";;
-    -i|--interactive)
-      validate_possible_values "$HELP_STRING" "$OPTION_INTERACTIVE" "${ACTION_AVAILABLE_ARGS[@]}"
-      INTERACTIVE=1;;
-    -d|--debug)
-      DEBUG=1;;
-    -h|--help)
-      exit_with_messages "$HELP_STRING";;
-    *)
-      OTHER_ARGS+=("$1")
+  -w | --workspace)
+    shift
+    validate_args_non_empty "$HELP_STRING" "$@"
+    WORKSPACE="$1"
+    ;;
+  -f | --test-filter)
+    shift
+    validate_args_non_empty "$HELP_STRING" "$@"
+    validate_possible_values "$HELP_STRING" "$PARAM_TEST_FILTER" "${ACTION_AVAILABLE_ARGS[@]}"
+    TEST_FILTER="$1"
+    ;;
+  -i | --interactive)
+    validate_possible_values "$HELP_STRING" "$OPTION_INTERACTIVE" "${ACTION_AVAILABLE_ARGS[@]}"
+    INTERACTIVE=1
+    ;;
+  -d | --debug)
+    DEBUG=1
+    ;;
+  -h | --help)
+    exit_with_messages "$HELP_STRING"
+    ;;
+  *)
+    OTHER_ARGS+=("$1")
+    ;;
   esac
   shift
 done
@@ -159,10 +169,10 @@ elif [[ "$ACTION" == "$ARG_ACTION_CONTAINER_RUN" ]]; then
   validate_args_are_empty "$HELP_STRING" "${OTHER_ARGS[@]}"
 
   if [[ -z "$DEBUG" ]]; then
-    docker run -t -d --name "$CONTAINER_INSTANCE_NAME" -v "${WORKSPACE}:/root/workspace/${PROJECT_NAME}" "$CONTAINER_IMAGE_NAME"
+    docker run -t -d --name "$CONTAINER_INSTANCE_NAME" -v "${WORKSPACE}:/m3d/workspace/${PROJECT_NAME}" "$CONTAINER_IMAGE_NAME"
   else
     echo "Debugging is enabled"
-    docker run -t -d --name "$CONTAINER_INSTANCE_NAME" -v "${WORKSPACE}:/root/workspace/${PROJECT_NAME}" -p 5005:5005 "$CONTAINER_IMAGE_NAME"
+    docker run -t -d --name "$CONTAINER_INSTANCE_NAME" -v "${WORKSPACE}:/m3d/workspace/${PROJECT_NAME}" -p 5005:5005 "$CONTAINER_IMAGE_NAME"
   fi
 
 # cleanup files generated by SBT
@@ -181,6 +191,22 @@ elif [[ "$ACTION" == "$ARG_ACTION_CONTAINER_EXECUTE" ]]; then
   EXTERNAL_CMD="${OTHER_ARGS[0]}"
   exec_command_within_container "$CONTAINER_INSTANCE_NAME" "$PROJECT_NAME" "$EXTERNAL_CMD" "$INTERACTIVE"
 
+# format the code
+elif [[ "$ACTION" == "$ARG_ACTION_PROJECT_FORMAT" ]]; then
+  echo "Formatting code ..."
+  validate_args_are_empty "$HELP_STRING" "${OTHER_ARGS[@]}"
+
+  SBT_CMD='sbt scalafmtAll "scalafix RemoveUnused" "test:scalafix RemoveUnused"'
+  exec_command_within_container "$CONTAINER_INSTANCE_NAME" "$PROJECT_NAME" "$SBT_CMD" "$INTERACTIVE"
+
+# lint code
+elif [[ "$ACTION" == "$ARG_ACTION_PROJECT_LINT" ]]; then
+  echo "linting code ..."
+  validate_args_are_empty "$HELP_STRING" "${OTHER_ARGS[@]}"
+
+  SBT_CMD='sbt scalafmtCheckAll'
+  exec_command_within_container "$CONTAINER_INSTANCE_NAME" "$PROJECT_NAME" "$SBT_CMD" "$INTERACTIVE"
+
 # build the code and assembly a jar-file
 elif [[ "$ACTION" == "$ARG_ACTION_PROJECT_ASSEMBLE" ]]; then
   echo "Creating a jar-file ..."
@@ -196,7 +222,7 @@ elif [[ "$ACTION" == "$ARG_ACTION_PROJECT_TEST" ]]; then
 
   if [[ -z "$DEBUG" ]]; then
     SBT_OPTS="-Xms512M -Xmx512M"
-    SBT_CMD="SBT_OPTS=\"${SBT_OPTS}\" sbt \"test\""
+    SBT_CMD="SBT_OPTS=\"${SBT_OPTS}\" sbt \"test:testOnly ${TEST_FILTER}\""
     exec_command_within_container "$CONTAINER_INSTANCE_NAME" "$PROJECT_NAME" "$SBT_CMD" "$INTERACTIVE"
   else
     echo "Debugging is enabled"

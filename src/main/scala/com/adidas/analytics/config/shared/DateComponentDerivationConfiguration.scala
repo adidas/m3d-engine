@@ -1,6 +1,5 @@
 package com.adidas.analytics.config.shared
 
-
 trait DateComponentDerivationConfiguration {
 
   protected def partitionSourceColumn: String
@@ -9,4 +8,3 @@ trait DateComponentDerivationConfiguration {
 
   protected def targetPartitions: Seq[String]
 }
-

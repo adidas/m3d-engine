@@ -5,16 +5,18 @@ import com.adidas.analytics.algo.NestedFlattener
 import com.adidas.utils.{BaseAlgorithmTest, FileReader}
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.types.{DataType, StructType}
-import org.scalatest.FeatureSpec
-import org.scalatest.Matchers._
+import org.scalatest.featurespec.AnyFeatureSpec
+import org.scalatest.matchers.should.Matchers._
 
-class NestedFlattenerTest extends FeatureSpec with BaseAlgorithmTest {
+class NestedFlattenerTest extends AnyFeatureSpec with BaseAlgorithmTest {
 
   private val database = "test_lake"
   private val paramsFileName = "params.json"
+
   private val paramsFileHdfsPath: Path = new Path(hdfsRootTestPath, paramsFileName)
 
   private val rootSourceDirPath: Path = new Path(hdfsRootTestPath, s"$database/nest")
+
   private val sourceDirPath: Path = new Path(hdfsRootTestPath, s"$database/nest/nest_test/data")
   private val sourceDataLocalDir = "nest_test"
 
@@ -22,12 +24,17 @@ class NestedFlattenerTest extends FeatureSpec with BaseAlgorithmTest {
   private val expectedDataFileName = "expected_target_data.psv"
 
   private val targetTableName = "nest_flattened"
+
   private val targetDirPath: Path = new Path(hdfsRootTestPath, s"$database/$targetTableName/data")
-  private val targetSchema = DataType.fromJson(getResourceAsText(s"target_schema.json")).asInstanceOf[StructType]
 
-  feature("Semi-structured data is fully flattened ... and problematic characters are replaced") {
+  private val targetSchema =
+    DataType.fromJson(getResourceAsText(s"target_schema.json")).asInstanceOf[StructType]
 
-    scenario("Test Case 1: target Schema is correct and non-partitioned table was successfully flattened and exploded") {
+  Feature("Semi-structured data is fully flattened ... and problematic characters are replaced") {
+
+    Scenario(
+      "Test Case 1: target Schema is correct and non-partitioned table was successfully flattened and exploded"
+    ) {
       val testCaseId = "scenario1"
 
       copyResourceFileToHdfs(s"$testCaseId/$paramsFileName", paramsFileHdfsPath)
@@ -51,14 +58,17 @@ class NestedFlattenerTest extends FeatureSpec with BaseAlgorithmTest {
         tableName = expectedTargetTableName,
         schema = targetSchema,
         filePath = expectedDataFileName,
-        reader = FileReader.newDSVFileReader(Some(targetSchema)))
+        reader = FileReader.newDSVFileReader(Some(targetSchema))
+      )
       val expectedTargetDf = expectedTargetTable.read()
 
       // target table has exactly the same data as the expected data
       targetDf.hasDiff(expectedTargetDf) shouldBe false
     }
 
-    scenario("Test Case 2: target Schema is correct and partitioned table was successfully flattened and exploded") {
+    Scenario(
+      "Test Case 2: target Schema is correct and partitioned table was successfully flattened and exploded"
+    ) {
       val testCaseId = "scenario2"
 
       copyResourceFileToHdfs(s"$testCaseId/$paramsFileName", paramsFileHdfsPath)
@@ -68,7 +78,12 @@ class NestedFlattenerTest extends FeatureSpec with BaseAlgorithmTest {
       // source table has the expected number of records
       sourceDf.count() shouldBe 3
 
-      val targetTable = createParquetTable(database, targetTableName, partitionColumns = Some(Seq("device_brand")), schema = targetSchema)
+      val targetTable = createParquetTable(
+        database,
+        targetTableName,
+        partitionColumns = Some(Seq("device_brand")),
+        schema = targetSchema
+      )
       val nestedFlattener = NestedFlattener(spark, dfs, paramsFileHdfsPath.toString)
       nestedFlattener.run()
 
@@ -84,7 +99,8 @@ class NestedFlattenerTest extends FeatureSpec with BaseAlgorithmTest {
         partitionColumns = Some(Seq("device_brand")),
         schema = targetSchema,
         filePath = expectedDataFileName,
-        reader = FileReader.newDSVFileReader(Some(targetSchema)))
+        reader = FileReader.newDSVFileReader(Some(targetSchema))
+      )
       val expectedTargetDf = expectedTargetTable.read()
 
       // target table has exactly the same data as the expected data
@@ -93,9 +109,7 @@ class NestedFlattenerTest extends FeatureSpec with BaseAlgorithmTest {
 
   }
 
-  /*
-   * Creates the FS folders, sends the parameters and data to FS, and creates the database
-   */
+  /* Creates the FS folders, sends the parameters and data to FS, and creates the database */
   override def beforeEach(): Unit = {
     super.beforeEach()
 

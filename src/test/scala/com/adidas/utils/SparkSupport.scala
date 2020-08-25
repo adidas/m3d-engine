@@ -1,13 +1,11 @@
 package com.adidas.utils
 
 import java.io.File
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.slf4j.Logger
-
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters.iterableAsScalaIterableConverter
 
 trait SparkSupport extends SparkSessionWrapper {
 
@@ -29,14 +27,18 @@ trait SparkSupport extends SparkSessionWrapper {
       new SparkConf(false)
         .set("spark.ui.enabled", "false")
         .set("spark.sql.warehouse.dir", new File(sparkTestDir, "warehouse").getAbsolutePath)
+        .set("spark.sql.shuffle.partitions", "8")
     } { (sparkConf, hadoopConf) =>
-      hadoopConf.foldLeft(sparkConf)((sc, entry) => sc.set(s"spark.hadoop.${entry.getKey}", entry.getValue))
+      hadoopConf.asScala.foldLeft(sparkConf)((sc, entry) =>
+        sc.set(s"spark.hadoop.${entry.getKey}", entry.getValue)
+      )
     }
 
     System.setProperty("derby.system.home", new File(sparkTestDir, "metastore").getAbsolutePath)
 
-    logger.info(s"Staring Spark Session with warehouse dir at ${sparkTestDir.getAbsolutePath} ...")
-    SparkSession.builder()
+    logger.info(s"Starting Spark Session with warehouse dir at ${sparkTestDir.getAbsolutePath} ...")
+    SparkSession
+      .builder()
       .config(sparkConf)
       .appName(s"test-${getClass.getName}")
       .master("local[*]")
@@ -44,14 +46,12 @@ trait SparkSupport extends SparkSessionWrapper {
       .getOrCreate()
   }
 
-  def addHadoopConfiguration(conf: Configuration): Unit = {
-    conf.foreach { property =>
+  def addHadoopConfiguration(conf: Configuration): Unit =
+    conf.asScala.foreach { property =>
       spark.sparkContext.hadoopConfiguration.set(property.getKey, property.getValue)
     }
-  }
 
-  def addHadoopProperty(key: String, value: String): Unit = {
+  def addHadoopProperty(key: String, value: String): Unit =
     spark.sparkContext.hadoopConfiguration.set(key, value)
-  }
 
 }

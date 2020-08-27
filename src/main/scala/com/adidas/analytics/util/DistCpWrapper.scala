@@ -4,13 +4,11 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.tools.{DistCp, DistCpOptions}
-
-import scala.collection.JavaConversions._
-
+import scala.collection.JavaConverters._
 
 class DistCpWrapper(conf: Configuration, sources: Seq[Path], target: Path) {
 
-  private val baseOptions = new DistCpOptions(sources, target)
+  private val baseOptions = new DistCpOptions(sources.asJava, target)
 
   def run(mapsNum: Int = 10, atomic: Boolean = false, overwrite: Boolean = false): Job = {
     val options = new DistCpOptions(baseOptions)
@@ -29,7 +27,6 @@ class DistCpWrapper(conf: Configuration, sources: Seq[Path], target: Path) {
 
 object DistCpWrapper {
 
-  def apply(conf: Configuration, sources: Seq[Path], target: Path): DistCpWrapper = {
+  def apply(conf: Configuration, sources: Seq[Path], target: Path): DistCpWrapper =
     new DistCpWrapper(conf, sources, target)
-  }
 }

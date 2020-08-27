@@ -1,6 +1,8 @@
 M3D Engine
 =======
 
+![M3D logo](/static/images/m3d_logo.png)
+
 **M3D** stands for _Metadata Driven Development_ and is a cloud and platform agnostic framework for the automated creation, management and governance of metadata and data flows from multiple source to multiple target systems. The main features and design goals of M3D are:
 
 *   Cloud and platform agnostic
@@ -46,7 +48,7 @@ M3D Engine supports:
 
 *   Loading structured and semi-structured data in Full mode
 *   Loading structured and semi-structured data in Append mode
-*   Loading structured and semi-structured data in Delta mode
+*   Loading structured and semi-structured data in Delta mode (DeltaLoad - in memory, by comparing new data and target table partitions; DeltaLakeLoad - using [Delta Lake IO](https://delta.io) capabilities)
 *   Decompression of compressed data
 *   Extraction from parquet file format
 *   Extraction from delimiter separated files (CSV,TSV,etc.)
@@ -102,7 +104,7 @@ The parameter file for the full load algorithm for example has the following con
 *   `delimiter` delimiter used in the case of `dsv` format
 *   `has_header` flag defining whether the input files have a header
 *   `partition_column` column that contains the partitioning information
-*   `partition_column_format` format of the partitioning column in the case of of time/date columns
+*   `partition_column_format` format of the partitioning column in the case of time/date columns
 *   `target_partitions`  partitioning columns in the target
 *   `target_table` target table where the data will be available for querying after loading
 

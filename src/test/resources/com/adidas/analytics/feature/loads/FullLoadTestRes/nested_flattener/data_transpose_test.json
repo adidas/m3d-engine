@@ -1,0 +1,282 @@
+[
+  {
+    "partition" : {
+      "key" : [ "KYR00" ],
+      "position" : 0
+    },
+    "rows" : [
+      {
+        "type" : "range_tombstone_bound",
+        "start" : {
+          "type" : "inclusive",
+          "clustering" : [ "FW2194", "606001", "*" ],
+          "deletion_info" : { "marked_deleted" : "2019-12-12T18:56:36.808970Z", "local_delete_time" : "2019-12-12T18:56:36Z" }
+        }
+      },
+      {
+        "type" : "range_tombstone_bound",
+        "end" : {
+          "type" : "inclusive",
+          "clustering" : [ "FW2194", "606001", "*" ],
+          "deletion_info" : { "marked_deleted" : "2019-12-12T18:56:36.808970Z", "local_delete_time" : "2019-12-12T18:56:36Z" }
+        }
+      }
+    ]
+  },
+  {
+    "partition": {
+      "key": [
+        "NOKIA"
+      ],
+      "position": 0
+    },
+    "rows": [
+      {
+        "type": "range_tombstone_bound",
+        "start": {
+          "type": "inclusive",
+          "clustering": [
+            "FU7388",
+            "011001",
+            "*"
+          ],
+          "deletion_info": {
+            "marked_deleted": "2019-12-17T02:26:18.525949Z",
+            "local_delete_time": "2019-12-17T02:26:18Z"
+          }
+        }
+      },
+      {
+        "type": "row",
+        "position": 1113,
+        "clustering": [
+          "COVER",
+          "GLASS"
+        ],
+        "liveness_info": {
+          "tstamp": "2019-12-31T01:32:28.359084Z"
+        },
+        "cells": [
+          {
+            "name": "additions",
+            "value": [ {"VAL":"TWO"} ]          },
+          {
+            "name": "type",
+            "value": "GREY"
+          },
+          {
+            "name": "piece",
+            "value": "GREY"
+          },
+          {
+            "name": "color_prod_code",
+            "value": "GREY"
+          },
+          {
+            "name": "color_prod_name",
+            "value": "GREY"
+          },
+          {
+            "name": "color_title",
+            "value": "FTWR WHITE"
+          },
+          {
+            "name": "color_treatment",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "cost_insurance_freight_percent",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "cw_num",
+            "value": "38477809"
+          },
+          {
+            "name": "cw_revision",
+            "value": "A"
+          },
+          {
+            "name": "fob_override",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "fw_num",
+            "value": "39015771"
+          },
+          {
+            "name": "fw_revision",
+            "value": "A"
+          },
+          {
+            "name": "kafka_offset",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "level",
+            "value": 3
+          },
+          {
+            "name": "loss_percent",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "manufacturing_spec",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "material_comparison_price",
+            "value": 0.0
+          },
+          {
+            "name": "material_comparison_uom",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "material_density",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "material_density_uom",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          }
+        ]
+      },
+      {
+        "type": "row",
+        "position": 1114,
+        "clustering": [
+          "COVER",
+          "GLASS",
+          "671c9ee2-2b6d-11ea-98a9-450e45c3a60b"
+        ],
+        "liveness_info": {
+          "tstamp": "2019-12-31T01:32:28.359084Z"
+        },
+        "cells": [
+          {
+            "name": "additions",
+            "value": [ {"VAL":"ONE"} ]
+          },
+          {
+            "name": "type",
+            "value": "GREY"
+          },
+          {
+            "name": "piece",
+            "value": "GREY"
+          },
+          {
+            "name": "color_prod_code",
+            "value": "GREY"
+          },
+          {
+            "name": "color_prod_name",
+            "value": "GREY"
+          },
+          {
+            "name": "color_title",
+            "value": "FTWR WHITE"
+          },
+          {
+            "name": "color_treatment",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "cost_insurance_freight_percent",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "cw_num",
+            "value": "38477809"
+          },
+          {
+            "name": "cw_revision",
+            "value": "A"
+          },
+          {
+            "name": "fob_override",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "fw_num",
+            "value": "39015771"
+          },
+          {
+            "name": "fw_revision",
+            "value": "A"
+          },
+          {
+            "name": "kafka_offset",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "level",
+            "value": 3
+          },
+          {
+            "name": "loss_percent",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "manufacturing_spec",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "material_comparison_price",
+            "value": 0.0
+          },
+          {
+            "name": "material_comparison_uom",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "material_density",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          },
+          {
+            "name": "material_density_uom",
+            "deletion_info": {
+              "local_delete_time": "2019-12-31T01:32:28Z"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
+

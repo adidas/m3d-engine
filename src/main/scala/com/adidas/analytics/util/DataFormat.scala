@@ -4,7 +4,6 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.types.StructType
 import org.slf4j.{Logger, LoggerFactory}
 
-
 sealed trait DataFormat {
 
   protected val logger: Logger = LoggerFactory.getLogger(getClass)
@@ -13,7 +12,6 @@ sealed trait DataFormat {
 
   def write(writer: DataFrameWriter[Row], location: String): Unit
 }
-
 
 object DataFormat {
 
@@ -36,7 +34,9 @@ object DataFormat {
     override def read(reader: DataFrameReader, locations: String*): DataFrame = {
       val filesString = locations.mkString(", ")
       logger.info(s"Reading DSV data from $filesString")
-      optionalSchema.fold(reader.option("inferSchema", "true"))(schema => reader.schema(schema)).csv(locations: _*)
+      optionalSchema
+        .fold(reader.option("inferSchema", "true"))(schema => reader.schema(schema))
+        .csv(locations: _*)
     }
 
     override def write(writer: DataFrameWriter[Row], location: String): Unit = {
@@ -45,12 +45,16 @@ object DataFormat {
     }
   }
 
-  case class JSONFormat(optionalSchema: Option[StructType] = None) extends DataFormat {
+  case class JSONFormat(optionalSchema: Option[StructType] = None, multiLine: Boolean = false)
+      extends DataFormat {
 
     override def read(reader: DataFrameReader, locations: String*): DataFrame = {
       val filesString = locations.mkString(", ")
       logger.info(s"Reading JSON data from $filesString")
-      optionalSchema.fold(reader.option("inferSchema", "true"))(schema => reader.schema(schema)).json(locations: _*)
+      optionalSchema
+        .fold(reader.option("inferSchema", "true"))(schema => reader.schema(schema))
+        .option("multiline", multiLine)
+        .json(locations: _*)
     }
 
     override def write(writer: DataFrameWriter[Row], location: String): Unit = {
@@ -58,5 +62,5 @@ object DataFormat {
       writer.json(location)
     }
   }
-}
 
+}

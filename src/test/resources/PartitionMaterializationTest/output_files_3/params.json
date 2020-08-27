@@ -1,7 +1,0 @@
-{
-  "source_table": "test_mart_mod.source_table",
-  "target_table": "test_mart_cal.target_table",
-  "target_partitions": ["year", "month", "day"],
-  "select_conditions": ["year=2017", "month=2", "day=15"],
-  "number_output_partitions": 3
-}

@@ -1,0 +1,14 @@
+{
+  "base_data_dir": "data/",
+  "backup_dir": "/tmp/tests/test_lake/test/test_table/data_backup/",
+  "current_dir": "/tmp/tests/test_lake/test/test_table/data/",
+  "delimiter": "|",
+  "file_format": "dsv",
+  "has_header": false,
+  "partition_column": "",
+  "partition_column_format": "",
+  "target_partitions": [],
+  "source_dir": "/tmp/tests/test_landing/test/test_table/data",
+  "target_table": "test_lake.test_table",
+  "reader_mode": "PERMISSIVE"
+}

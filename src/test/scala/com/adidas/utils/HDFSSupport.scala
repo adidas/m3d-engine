@@ -1,7 +1,6 @@
 package com.adidas.utils
 
 import java.io.File
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{CommonConfigurationKeysPublic, FileSystem}
 import org.apache.hadoop.hdfs.MiniDFSCluster
@@ -27,9 +26,11 @@ trait HDFSSupport {
 
     val clusterConf = hadoopConf.fold(new Configuration())(c => new Configuration(c))
     clusterConf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, hdfsTestDir.getAbsolutePath)
-    clusterConf.set(CommonConfigurationKeysPublic.FS_DEFAULT_NAME_KEY, s"hdfs://localhost:$defaultPort/")
+    clusterConf
+      .set(CommonConfigurationKeysPublic.FS_DEFAULT_NAME_KEY, s"hdfs://localhost:$defaultPort/")
 
-    logger.info(s"Starting test DFS cluster with base directory at ${hdfsTestDir.getAbsolutePath} ...")
+    logger
+      .info(s"Starting test DFS cluster with base directory at ${hdfsTestDir.getAbsolutePath} ...")
     new MiniDFSCluster.Builder(clusterConf)
       .numDataNodes(defaultDataNodesNum)
       .nameNodePort(defaultPort)

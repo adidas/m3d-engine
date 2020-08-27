@@ -1,0 +1,9 @@
+{
+  "active_records_table_lake": "test_lake.delta_load_active_data",
+  "business_key": ["salesorder", "item"],
+  "delta_records_file_path": "/tmp/tests/delta_data",
+  "technical_key": ["actrequest_timestamp", "datapakid", "partno", "record"],
+  "target_partitions": ["year", "month", "day"],
+  "partition_column": "date",
+  "partition_column_format": "yyyyMMdd"
+}

@@ -1,4 +1,5 @@
 pipeline {
+
   options {
     ansiColor('xterm')
     disableConcurrentBuilds()
@@ -34,6 +35,12 @@ pipeline {
         sh "./dev-env.sh container-run -w ${workspace}"
       }
     }
+
+    stage('lint code') {
+          steps {
+            sh "./dev-env.sh project-lint -w ${workspace}"
+          }
+        }
 
     stage('run tests') {
       steps {

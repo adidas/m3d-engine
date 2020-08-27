@@ -6,14 +6,25 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.types.{StructField, StructType}
 import org.slf4j.{Logger, LoggerFactory}
 
+case class Table private (
+    dfs: DFSWrapper,
+    spark: SparkSession,
+    table: String,
+    location: String,
+    schema: StructType,
+    targetPartitions: Seq[String],
+    format: DataFormat,
+    options: Map[String, String]
+) {
 
-case class Table private(dfs: DFSWrapper, spark: SparkSession, table: String, location: String, schema: StructType, targetPartitions: Seq[String], format: DataFormat, options: Map[String, String]) {
+  def read(): DataFrame = spark.read.table(table)
 
-  def read(): DataFrame = {
-    spark.read.table(table)
-  }
-
-  def write(files: Seq[String], reader: FileReader, loadMode: LoadMode, fillNulls: Boolean = false): Unit = {
+  def write(
+      files: Seq[String],
+      reader: FileReader,
+      loadMode: LoadMode,
+      fillNulls: Boolean = false
+  ): Unit = {
     val df = files.map(file => reader.read(spark, file, fillNulls)).reduce(_ union _)
     createWriter(loadMode).write(dfs, df)
     invalidateCaches()
@@ -40,25 +51,28 @@ case class Table private(dfs: DFSWrapper, spark: SparkSession, table: String, lo
     invalidateCaches()
   }
 
-  private def invalidateCaches(): Unit = {
-    if (targetPartitions.nonEmpty) {
-      spark.catalog.recoverPartitions(table)
-    } else {
-      spark.catalog.refreshTable(table)
-    }
-  }
+  private def invalidateCaches(): Unit =
+    if (targetPartitions.nonEmpty) spark.catalog.recoverPartitions(table)
+    else spark.catalog.refreshTable(table)
 
-  private def createWriter(loadMode: LoadMode): OutputWriter = {
-    OutputWriter.newFileSystemWriter(location, format, targetPartitions, options + ("emptyValue" -> ""), loadMode)
-  }
+  private def createWriter(loadMode: LoadMode): OutputWriter =
+    OutputWriter.newFileSystemWriter(
+      location,
+      format,
+      targetPartitions,
+      options + ("emptyValue" -> ""),
+      loadMode
+    )
 }
-
 
 object Table {
 
-  def newBuilder(table: String, database: String, location: String, schema: StructType): TableBuilder = {
-    new TableBuilder(table, database, location, schema)
-  }
+  def newBuilder(
+      table: String,
+      database: String,
+      location: String,
+      schema: StructType
+  ): TableBuilder = new TableBuilder(table, database, location, schema)
 
   private def mapToRow(rowValues: Map[String, Any], fillNulls: Boolean, schema: StructType): Row = {
     val record = schema.fields.map {
@@ -67,12 +81,10 @@ object Table {
     Row.fromSeq(record)
   }
 
-  protected def buildColumnDefinitions(fields: Seq[StructField]): String = {
-    fields.map {
-      case StructField(name, dataType, _, _) => s"$name ${dataType.typeName}"
-    }.mkString(", ")
-  }
-
+  protected def buildColumnDefinitions(fields: Seq[StructField]): String =
+    fields
+      .map { case StructField(name, dataType, _, _) => s"$name ${dataType.typeName}" }
+      .mkString(", ")
 
   class TableBuilder(table: String, database: String, location: String, schema: StructType) {
 
@@ -85,7 +97,6 @@ object Table {
     private val defaultDSVOptions: Map[String, String] = Map("delimiter" -> "|")
     private var options: Map[String, String] = Map()
 
-
     def withPartitions(targetPartitions: Seq[String]): TableBuilder = {
       this.targetPartitions = targetPartitions
       this
@@ -96,20 +107,29 @@ object Table {
       this
     }
 
-    def buildDSVTable(dfs: DFSWrapper, spark: SparkSession, external: Boolean): Table = {
+    def buildDSVTable(dfs: DFSWrapper, spark: SparkSession, external: Boolean): Table =
       buildTable(DSVFormat(Some(schema)), defaultDSVOptions ++ options, dfs, spark, external)
-    }
 
-    def buildParquetTable(dfs: DFSWrapper, spark: SparkSession, external: Boolean): Table = {
+    def buildParquetTable(dfs: DFSWrapper, spark: SparkSession, external: Boolean): Table =
       buildTable(ParquetFormat(Some(schema)), options, dfs, spark, external)
-    }
 
-    private def buildTable(format: DataFormat, options: Map[String, String], dfs: DFSWrapper, spark: SparkSession, external: Boolean): Table = {
+    private def buildTable(
+        format: DataFormat,
+        options: Map[String, String],
+        dfs: DFSWrapper,
+        spark: SparkSession,
+        external: Boolean
+    ): Table = {
       createHiveTable(format, options, spark, external)
       new Table(dfs, spark, fullTableName, location, schema, targetPartitions, format, options)
     }
 
-    private def createHiveTable(format: DataFormat, options: Map[String, String], spark: SparkSession, external: Boolean): Unit = {
+    private def createHiveTable(
+        format: DataFormat,
+        options: Map[String, String],
+        spark: SparkSession,
+        external: Boolean
+    ): Unit = {
       val fieldMap = schema.fields.map(f => (f.name, f)).toMap
       val partitionColumnFields = targetPartitions.map(fieldMap)
       val columnFields = schema.fields.diff(partitionColumnFields)
@@ -119,24 +139,19 @@ object Table {
 
       val statementBuilder = Array.newBuilder[String]
 
-      if (external) {
-        statementBuilder += s"CREATE EXTERNAL TABLE $fullTableName($columnDefinitions)"
-      } else {
-        statementBuilder += s"CREATE TABLE $fullTableName($columnDefinitions)"
-      }
+      if (external) statementBuilder += s"CREATE EXTERNAL TABLE $fullTableName($columnDefinitions)"
+      else statementBuilder += s"CREATE TABLE $fullTableName($columnDefinitions)"
 
-      if (targetPartitions.nonEmpty) {
+      if (targetPartitions.nonEmpty)
         statementBuilder += s"PARTITIONED BY ($partitionColumnDefinitions)"
-      }
 
       format match {
         case _: DataFormat.DSVFormat =>
           val delimiter = options("delimiter")
           statementBuilder += "ROW FORMAT DELIMITED"
           statementBuilder += s"FIELDS TERMINATED BY '$delimiter'"
-        case _: DataFormat.ParquetFormat =>
-          statementBuilder += "STORED AS PARQUET"
-        case anotherFormat =>  throw new RuntimeException(s"Unknown file format: $anotherFormat")
+        case _: DataFormat.ParquetFormat => statementBuilder += "STORED AS PARQUET"
+        case anotherFormat               => throw new RuntimeException(s"Unknown file format: $anotherFormat")
 
       }
 

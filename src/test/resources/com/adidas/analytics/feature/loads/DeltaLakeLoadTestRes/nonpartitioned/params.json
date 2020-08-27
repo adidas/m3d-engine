@@ -1,0 +1,37 @@
+{
+  "target_table": "test_lake.sales_orders",
+  "source_dir": "/tmp/tests/test_landing/sales/orders/data",
+  "file_format": "dsv",
+  "delimiter": "|",
+  "has_header": true,
+  "delta_table_dir": "/tmp/tests/test_landing/sales/orders/delta_table",
+  "is_to_vacuum": false,
+  "business_key": [
+    "salesorder",
+    "item"
+  ],
+  "condensation_key": [
+    "actrequest_timestamp",
+    "datapakid",
+    "partno",
+    "record"
+  ],
+  "record_mode_column": "recordmode",
+  "records_to_condense": [
+    null,
+    "",
+    "N",
+    "R",
+    "D",
+    "X"
+  ],
+  "records_to_delete": [
+    "R",
+    "D",
+    "X"
+  ],
+  "target_partitions": [],
+  "partition_column": "",
+  "partition_column_format": "",
+  "compute_table_statistics": false
+}

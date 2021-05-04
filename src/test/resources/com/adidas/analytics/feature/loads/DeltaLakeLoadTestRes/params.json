@@ -11,6 +11,7 @@
     "item"
   ],
   "condensation_key": [
+    "m3d_timestamp",
     "actrequest_timestamp",
     "datapakid",
     "partno",

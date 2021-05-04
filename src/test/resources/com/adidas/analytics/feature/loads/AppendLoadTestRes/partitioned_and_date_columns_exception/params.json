@@ -1,0 +1,13 @@
+{
+  "backup_dir": "/tmp/tests/test_lake/test_table/data_backup/",
+  "current_dir": "/tmp/tests/test_lake/test_table/data/",
+  "source_dir": "/tmp/tests/test_landing/test_table/data",
+  "header_dir": "/tmp/tests/test_landing/test_table/header",
+  "delimiter": "|",
+  "date_format": "MM/dd/yyyy",
+  "file_format": "dsv",
+  "has_header": false,
+  "partition_column": "report_date",
+  "target_partitions": ["year", "week"],
+  "target_table": "test_lake.test_table"
+}

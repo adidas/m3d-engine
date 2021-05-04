@@ -1,4 +1,4 @@
-FROM amazonlinux:2.0.20200722.0
+FROM amazonlinux:2.0.20210326.0
 
 ARG JAVA_VERSION=1.8.0
 

@@ -14,6 +14,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 import org.slf4j.{Logger, LoggerFactory}
+
 import scala.collection.immutable
 
 /** Performs append load of new records to an existing table.
@@ -27,7 +28,18 @@ final class AppendLoad protected (
     with TableStatistics
     with DateComponentDerivation {
 
-  override protected def read(): Vector[DataFrame] = readInputData(targetSchema, spark, dfs)
+  override protected def read(): Vector[DataFrame] =
+    if (regexFilename.nonEmpty || partitionSourceColumn.nonEmpty)
+      readInputData(targetSchema, spark, dfs)
+    else
+      Vector(
+        readInputFiles(
+          Seq(inputDir),
+          fileFormat,
+          if (!verifySchema) Some(targetSchema) else None,
+          spark.read.options(sparkReaderOptions)
+        )
+      )
 
   override protected def transform(dataFrames: Vector[DataFrame]): Vector[DataFrame] =
     if (partitionSourceColumn.nonEmpty)
@@ -80,7 +92,7 @@ final class AppendLoad protected (
   ): Seq[Source] = {
     logger.info(s"Looking for input files in $inputDirPath")
     val targetSchemaWithoutTargetPartitions =
-      getSchemaWithouttargetPartitions(targetSchema, targetPartitions.toSet)
+      getSchemaWithoutTargetPartitions(targetSchema, targetPartitions.toSet)
     if (partitionSourceColumn.nonEmpty)
       fs.ls(inputDirPath, recursive = true)
         .map(sourcePath => Source(targetSchemaWithoutTargetPartitions, sourcePath.toString))
@@ -169,19 +181,19 @@ final class AppendLoad protected (
   private def readSources(sources: Seq[Source], spark: SparkSession): Vector[DataFrame] =
     groupSourcesBySchema(sources).map {
       case (schema, inputPaths) =>
-        readInputFiles(inputPaths, fileFormat, schema, spark.read.options(sparkReaderOptions))
+        readInputFiles(inputPaths, fileFormat, Some(schema), spark.read.options(sparkReaderOptions))
     }.toVector
 
   private def readInputFiles(
       inputPaths: Seq[String],
       fileFormat: String,
-      schema: StructType,
+      schema: Option[StructType],
       reader: DataFrameReader
   ): DataFrame =
     fileFormat match {
-      case "dsv"         => DSVFormat(Some(schema)).read(reader, inputPaths: _*)
-      case "parquet"     => ParquetFormat(Some(schema)).read(reader, inputPaths: _*)
-      case "json"        => JSONFormat(Some(schema)).read(reader, inputPaths: _*)
+      case "dsv"         => DSVFormat(schema, multiLine = isMultiline).read(reader, inputPaths: _*)
+      case "parquet"     => ParquetFormat(schema).read(reader, inputPaths: _*)
+      case "json"        => JSONFormat(schema, multiLine = isMultiline).read(reader, inputPaths: _*)
       case anotherFormat => throw new RuntimeException(s"Unknown file format: $anotherFormat")
     }
 }
@@ -197,7 +209,7 @@ object AppendLoad {
   private def extractPathWithoutServerAndProtocol(path: String): String =
     path.replaceFirst("\\w+\\d*://.+?/", "")
 
-  private def getSchemaWithouttargetPartitions(
+  private def getSchemaWithoutTargetPartitions(
       targetSchema: StructType,
       targetPartitions: Set[String]
   ): StructType =
@@ -263,7 +275,7 @@ object AppendLoad {
     val fs = dfs.getFileSystem(headerDirPath)
     dataFrames.foreach { df =>
       val schemaJson =
-        getSchemaWithouttargetPartitions(df.schema, targetPartitions.toSet).prettyJson
+        getSchemaWithoutTargetPartitions(df.schema, targetPartitions.toSet).prettyJson
       df.collectPartitions(targetPartitions).foreach { partitionCriteria =>
         val subdirectories = DataFrameUtils.mapPartitionsToDirectories(partitionCriteria)
         val headerPath = new Path(headerDirPath.join(subdirectories), headerFileName)

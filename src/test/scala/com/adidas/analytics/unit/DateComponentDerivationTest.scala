@@ -169,4 +169,29 @@ class DateComponentDerivationTest
     transformedDf.hasDiff(expectedDf) shouldBe false
   }
 
+  test("Partition by year/month/day with formatter yyyy-MM-dd HH:mm:ss") {
+
+    val sampleDf =
+      Seq(("2020-04-27 10:12:14"), ("2020-04-28 12:00:14"), ("2020-04-29 22:02:03")).toDF("partcol")
+
+    val dateComponentDerivationTester: DataFrame => DataFrame =
+      new DateComponentDerivationSubClass().validateWithDateComponents(
+        sourceDateColumnName = "partcol",
+        sourceDateFormat = "yyyy-MM-dd HH:mm:ss",
+        targetDateComponentColumnNames = Seq("year", "month", "day")
+      )
+
+    val transformedDf = sampleDf.transform(dateComponentDerivationTester)
+
+    val expectedDf =
+      Seq(
+        ("2020-04-27 10:12:14", 2020, 4, 27),
+        ("2020-04-28 12:00:14", 2020, 4, 28),
+        ("2020-04-29 22:02:03", 2020, 4, 29)
+      )
+        .toDF("partcol", "year", "month", "day")
+
+    transformedDf.hasDiff(expectedDf) shouldBe false
+  }
+
 }

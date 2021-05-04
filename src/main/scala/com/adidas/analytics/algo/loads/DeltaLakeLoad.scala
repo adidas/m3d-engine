@@ -28,7 +28,7 @@ final class DeltaLakeLoad protected (
         case "parquet" => ParquetFormat()
         case "dsv"     => DSVFormat()
         case "json" =>
-          JSONFormat(multiLine = isMultilineJSON.getOrElse(false), optionalSchema = readJsonSchema)
+          JSONFormat(multiLine = isMultiline, optionalSchema = readJsonSchema)
         case _ => throw new RuntimeException(s"Unsupported input data format $fileFormat.")
       }
 
@@ -81,12 +81,14 @@ final class DeltaLakeLoad protected (
 
       deltaTableDF
     } else {
-      val condensedNewDataDF = condenseNewData(newDataDF, initLoad = true)
+      val initDataDF =
+        if (initCondensation)
+          condenseNewData(newDataDF, initLoad = true)
+        else
+          newDataDF
 
-      affectedPartitions = condensedNewDataDF.collectPartitions(targetPartitions)
-
-      initDeltaTable(condensedNewDataDF)
-
+      affectedPartitions = initDataDF.collectPartitions(targetPartitions)
+      initDeltaTable(initDataDF)
       DeltaTable.forPath(deltaTableDir).toDF
     }
 
@@ -251,7 +253,10 @@ final class DeltaLakeLoad protected (
 
     /** Given a collection of column names it builds the adequate delta merge match condition. E.g.:
       * Given Seq("sales_id", "sales_date") it returns currentData.sales_id = newData.sales_id AND
-      * currentData.sales_date = newData.sales_date
+      * currentData.sales_date = newData.sales_date. If affectedPartitionsMerge is true, then the
+      * merge condition will include the columns of the business key plus a filter with the affected
+      * partitions, otherwise it will include the columns of the business key plus the partition
+      * columns.
       *
       * @param columns
       *   list of column names to build the match condition
@@ -264,9 +269,15 @@ final class DeltaLakeLoad protected (
 
     targetPartitions match {
       case _ :: _ =>
-        if (!ignoreAffectedPartitionsMerge) generateCondition(businessKey.union(targetPartitions))
-        else
-          s"${generateCondition(businessKey)} $logicalOperator (${generateAffectedPartitionsWhere(forceAdditionOfNullPartitionCriteria(affectedPartitions, targetPartitions), s"$currentDataAlias.")})"
+        if (!affectedPartitionsMerge)
+          generateCondition(businessKey.union(targetPartitions))
+        else {
+          val affectedPartitionsWhere = generateAffectedPartitionsWhere(
+            forceAdditionOfNullPartitionCriteria(affectedPartitions, targetPartitions),
+            s"$currentDataAlias."
+          )
+          s"${generateCondition(businessKey)} $logicalOperator ($affectedPartitionsWhere)"
+        }
       case _ => generateCondition(businessKey)
     }
   }

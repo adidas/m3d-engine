@@ -44,9 +44,13 @@ object AlgorithmFactory {
       .config("hive.stats.fetch.column.stats", "true")
       .config("hive.stats.fetch.partition.stats", "true")
       .config("spark.sql.parquet.compression.codec", "snappy")
-      .config("spark.sql.parquet.writeLegacyFormat", "true")
       .config("spark.sql.sources.partitionColumnTypeInference.enabled", "false")
       .config("spark.sql.csv.parser.columnPruning.enabled", "false")
+      /* We maintain this option to ensure that Hive and Spark < 3.0 downstream consumers can
+       * properly read the Parquet data with appropriate data types and date formats. */
+      .config("spark.sql.parquet.writeLegacyFormat", "true")
+      // Configs for delta lake load... more specifics added in the DeltaLakeLoad config
+      .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
       .enableHiveSupport()
       .getOrCreate()
 

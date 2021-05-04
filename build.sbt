@@ -1,19 +1,20 @@
 import sbt.ExclusionRule
 
 name := "m3d-engine"
-version := "1.0"
+version := "6.0.0"
 
-scalaVersion := "2.11.12"
+scalaVersion := "2.12.13"
+addCompilerPlugin("org.scalameta" % "semanticdb-scalac" % "4.4.11" cross CrossVersion.full)
+scalacOptions += "-Yrangepos"
 semanticdbEnabled := true
-semanticdbVersion := scalafixSemanticdb.revision
 scalacOptions += "-Ywarn-unused-import"
 
-val sparkVersion = "2.4.4"
-val hadoopVersion = "2.8.5"
+val sparkVersion = "3.0.1"
+val hadoopVersion = "3.2.1"
 
 conflictManager := sbt.ConflictManager.latestRevision
 
-mainClass in Compile := Some("com.adidas.analytics.AlgorithmFactory")
+Compile / mainClass := Some("com.adidas.analytics.AlgorithmFactory")
 
 /* =====================
  * Dependencies
@@ -32,21 +33,23 @@ libraryDependencies += "org.apache.spark" %% "spark-hive" % sparkVersion % Provi
 libraryDependencies += "org.apache.hadoop" % "hadoop-common" % hadoopVersion % Provided withExclusions Vector(
   ExclusionRule("io.netty", "netty-all")
 )
+
 libraryDependencies += "org.apache.hadoop" % "hadoop-hdfs" % hadoopVersion % Provided
+libraryDependencies += "org.apache.hadoop" % "hadoop-hdfs-client" % hadoopVersion % Provided
 libraryDependencies += "org.apache.hadoop" % "hadoop-distcp" % hadoopVersion % Provided
 
-libraryDependencies += "joda-time" % "joda-time" % "2.9.3" % Provided
+libraryDependencies += "joda-time" % "joda-time" % "2.10.10" % Provided
 libraryDependencies += "org.joda" % "joda-convert" % "2.2.1"
 
 libraryDependencies += "org.slf4j" % "slf4j-log4j12" % "1.7.30"
 
-libraryDependencies += "io.delta" %% "delta-core" % "0.6.1"
+libraryDependencies += "io.delta" %% "delta-core" % "0.8.0"
 
 /* =====================
  * Dependencies for test
  * ===================== */
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.1" % Test
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.7" % Test
 
 libraryDependencies +=
   "org.apache.hadoop" % "hadoop-hdfs" % hadoopVersion % Test classifier "tests" withExclusions Vector(
@@ -57,10 +60,10 @@ libraryDependencies +=
     ExclusionRule("io.netty", "netty-all")
   )
 
-fork in Test := true
+Test / fork := true
 
 // disable parallel execution
-parallelExecution in Test := false
+Test / parallelExecution := false
 
 // skipping tests when running assembly
-test in assembly := {}
+assembly / test := {}

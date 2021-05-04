@@ -10,7 +10,7 @@
   "target_partitions": [],
   "source_dir": "/tmp/tests/test_landing/test/test_table/data",
   "target_table": "test_lake.test_table",
-  "is_multiline_json": true,
+  "multi_line": true,
   "additional_task": {
     "nested_task_properties" : {
       "side_flatten": {

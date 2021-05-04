@@ -50,7 +50,7 @@ trait AlgorithmTemplateConfiguration
     CatalogTableManager(targetTable, spark).getSchemaSafely(dfs)
 
   override protected val readers: Vector[InputReader.TableReader] = Vector(
-    // Obtaining a reader for the algorithm
+    // Obtaining a reader for the algorithm.
     InputReader.newTableReader(table = sourceTable)
     /* you can use a source location as parquet files on the lake instead of a hive table */
     /* InputReader.newFileSystemReader(sourceLocation, DataFormat.ParquetFormat()) */
@@ -71,8 +71,8 @@ trait AlgorithmTemplateConfiguration
     OutputWriter.newTableLocationWriter(
       table = targetTable,
       format = ParquetFormat(Some(targetSchema)),
-      metadataConfiguration = getMetaDataUpdateStrategy(targetTable, Seq.empty),
-      targetPartitions = Seq.empty,
+      metadataConfiguration = getMetaDataUpdateStrategy(targetTable, Seq("", "", "")),
+      targetPartitions = Seq("", "", ""),
       /* If partitions are required, this would look like, e.g., Seq("year", "month") */
       loadMode = LoadMode.OverwritePartitionsWithAddedColumns
     )

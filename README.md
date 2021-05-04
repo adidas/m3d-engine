@@ -1,7 +1,7 @@
 M3D Engine
 =======
 
-![M3D logo](/static/images/m3d_logo.png)
+![M3DLogo](static/images/m3d_logo.png)
 
 **M3D** stands for _Metadata Driven Development_ and is a cloud and platform agnostic framework for the automated creation, management and governance of metadata and data flows from multiple source to multiple target systems. The main features and design goals of M3D are:
 

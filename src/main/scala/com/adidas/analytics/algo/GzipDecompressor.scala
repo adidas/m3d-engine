@@ -45,7 +45,7 @@ final class GzipDecompressor protected (
       Future.sequence(
         fileSystem
           .ls(inputDirectoryPath, recursive)
-          .filterNot(path => fileSystem.isDirectory(path))
+          .filterNot(path => fileSystem.getFileStatus(path).isDirectory)
           .map { compressedFilePath =>
             Future {
               val decompressedFilePath =
@@ -54,9 +54,8 @@ final class GzipDecompressor protected (
                 if (compressedFilePath.getName.endsWith(".zip")) {
                   val zin = new ZipInputStream(fileSystem.open(compressedFilePath))
                   /* Warning: we intentionally only support zip files with one entry here as we want
-                   * to control */
-                  /* the output name and can not merge multiple entries because they may have
-                   * headers. */
+                   * to control the output name and can not merge multiple entries because they may
+                   * have headers. */
                   zin.getNextEntry
                   zin
                 } else {

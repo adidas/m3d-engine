@@ -27,7 +27,7 @@ trait SparkSupport extends SparkSessionWrapper {
       new SparkConf(false)
         .set("spark.ui.enabled", "false")
         .set("spark.sql.warehouse.dir", new File(sparkTestDir, "warehouse").getAbsolutePath)
-        .set("spark.sql.shuffle.partitions", "8")
+        .set("spark.sql.shuffle.partitions", "2")
     } { (sparkConf, hadoopConf) =>
       hadoopConf.asScala.foldLeft(sparkConf)((sc, entry) =>
         sc.set(s"spark.hadoop.${entry.getKey}", entry.getValue)
@@ -41,7 +41,7 @@ trait SparkSupport extends SparkSessionWrapper {
       .builder()
       .config(sparkConf)
       .appName(s"test-${getClass.getName}")
-      .master("local[*]")
+      .master("local[2]")
       .enableHiveSupport()
       .getOrCreate()
   }

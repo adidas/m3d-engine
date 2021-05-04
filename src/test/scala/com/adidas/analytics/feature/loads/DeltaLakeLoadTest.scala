@@ -12,9 +12,6 @@ import org.scalatest.matchers.should.Matchers._
 
 class DeltaLakeLoadTest extends AnyFeatureSpec with BaseAlgorithmTest with GivenWhenThen {
 
-  spark.conf.set("spark.executor.instances", "1")
-  spark.conf.set("spark.executor.cores", "2")
-
   private val sourceSystem: String = "sales"
   private val testTableName: String = "orders"
   private val layerLanding: String = "test_landing"
@@ -161,7 +158,7 @@ class DeltaLakeLoadTest extends AnyFeatureSpec with BaseAlgorithmTest with Given
   Feature("Unstable target partitions whose values change over time for several rows") {
 
     Scenario(s"Unstable target partitions, and parameters are not properly configured") {
-      Given("ignore_affected_partitions_merge is false")
+      Given("affected_partitions_merge is false")
       val resourceDir = "unstable_partitions_wrong_params"
 
       copyResourceFileToHdfs(s"$resourceDir/$paramsFile", paramsFileHdfsPath)
@@ -203,7 +200,7 @@ class DeltaLakeLoadTest extends AnyFeatureSpec with BaseAlgorithmTest with Given
     Scenario(s"Unstable target partitions, but parameters are properly configured") {
       val resourceDir = "unstable_partitions_right_params"
 
-      Given("ignore_affected_partitions_merge is true")
+      Given("affected_partitions_merge is true")
       copyResourceFileToHdfs(s"$resourceDir/$paramsFile", paramsFileHdfsPath)
 
       val targetTable = createTable(

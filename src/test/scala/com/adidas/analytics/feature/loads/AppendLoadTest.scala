@@ -121,7 +121,7 @@ class AppendLoadTest extends AnyFeatureSpec with BaseAlgorithmTest {
       fs.exists(headerPath20180422) shouldBe false
 
       // executing load
-      assertThrows[SparkException](AppendLoad(spark, dfs, paramsFileHdfsPath.toString).run())
+      assertThrows[RuntimeException](AppendLoad(spark, dfs, paramsFileHdfsPath.toString).run())
     }
 
     Scenario(
@@ -636,6 +636,36 @@ class AppendLoadTest extends AnyFeatureSpec with BaseAlgorithmTest {
       fs.exists(headerPath202020) shouldBe true
       fs.exists(targetPath202020) shouldBe true
     }
+
+    Scenario(
+      "Using Append Load Algorithm to integrate date columns as date format gives exception when input has invalid dates"
+    ) {
+      val testResourceDir = "partitioned_and_date_columns_exception"
+      val headerPath202020 = new Path(headerDirPath, "year=2020/week=20/header.json")
+      val targetPath202020 = new Path(targetDirPath, "year=2020/week=20")
+
+      val targetSchema =
+        DataType
+          .fromJson(getResourceAsText(s"$testResourceDir/target_schema.json"))
+          .asInstanceOf[StructType]
+      val dataReader = FileReader.newDSVFileReader(Some(targetSchema), dateFormat = "MM/dd/yyyy")
+
+      val targetTable = createTargetTable(Seq("year", "week"), targetSchema)
+      setupInitialState(targetTable, s"$testResourceDir/lake_data_pre.psv", dataReader)
+      prepareSourceData(testResourceDir, Seq("new_data.psv"))
+      uploadParameters(testResourceDir)
+
+      // checking pre-conditions
+      spark.read.csv(sourceDirPath.toString).count() shouldBe 4
+      targetTable.read().count() shouldBe 10
+
+      fs.exists(headerPath202020) shouldBe false
+      fs.exists(targetPath202020) shouldBe false
+
+      // executing load
+      assertThrows[SparkException](AppendLoad(spark, dfs, paramsFileHdfsPath.toString).run())
+    }
+
   }
 
   override def beforeEach(): Unit = {

@@ -17,6 +17,7 @@ trait LoadConfiguration {
   private val optionalSparkOptions: Map[String, String] = Map[String, Option[String]](
     "nullValue" -> readNullValue,
     "quote" -> readQuoteValue,
+    "escape" -> readEscapeValue,
     "dateFormat" -> Some(dateFormat)
   ).collect { case (key, Some(value)) => (key, value) }
 
@@ -39,6 +40,9 @@ trait LoadConfiguration {
   protected val sparkReaderOptions: Map[String, String] = requiredSparkOptions ++
     optionalSparkOptions
 
+  protected val isMultiline: Boolean =
+    configReader.getAsOption[Boolean]("multi_line").getOrElse(false)
+
   protected def configReader: ConfigReader
 
   protected def loadMode: String
@@ -46,6 +50,9 @@ trait LoadConfiguration {
   protected def readNullValue: Option[String] = configReader.getAsOption[String]("null_value")
 
   protected def readQuoteValue: Option[String] = configReader.getAsOption[String]("quote_character")
+
+  protected def readEscapeValue: Option[String] =
+    configReader.getAsOption[String]("escape_character")
 
   protected def computeTableStatistics: Boolean =
     configReader.getAsOption[Boolean]("compute_table_statistics").getOrElse(true)

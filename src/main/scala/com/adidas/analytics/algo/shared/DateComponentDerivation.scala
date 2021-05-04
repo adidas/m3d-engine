@@ -5,8 +5,9 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoField
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.expressions.UserDefinedFunction
-import org.apache.spark.sql.functions.{udf, _}
-import org.apache.spark.sql.types.{IntegerType, StringType}
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.StringType
+
 import scala.util.{Failure, Success, Try}
 
 trait DateComponentDerivation {
@@ -28,7 +29,6 @@ trait DateComponentDerivation {
               df,
               sourceDateColumnName,
               colName,
-              DateComponentDerivation.DEFAULT_4DIGIT_VALUE,
               customYear
             )
           case "month" =>
@@ -36,7 +36,6 @@ trait DateComponentDerivation {
               df,
               sourceDateColumnName,
               colName,
-              DateComponentDerivation.DEFAULT_2DIGIT_VALUE,
               customMonth
             )
           case "day" =>
@@ -44,7 +43,6 @@ trait DateComponentDerivation {
               df,
               sourceDateColumnName,
               colName,
-              DateComponentDerivation.DEFAULT_2DIGIT_VALUE,
               customDay
             )
           case "week" =>
@@ -52,7 +50,6 @@ trait DateComponentDerivation {
               df,
               sourceDateColumnName,
               colName,
-              DateComponentDerivation.DEFAULT_2DIGIT_VALUE,
               customWeekOfYear
             )
         }
@@ -68,92 +65,78 @@ trait DateComponentDerivation {
       inputDf: DataFrame,
       sourceDateColumnName: String,
       targetColumnName: String,
-      defaultValue: Int,
       derivationFunction: UserDefinedFunction
   ): DataFrame =
     inputDf.withColumn(
       targetColumnName,
-      when(
-        derivationFunction(
-          col(sourceDateColumnName).cast(StringType),
-          col(tempFormatterColumnName)
-        ).isNotNull,
-        derivationFunction(col(sourceDateColumnName).cast(StringType), col(tempFormatterColumnName))
-      ).otherwise(lit(defaultValue))
+      derivationFunction(col(sourceDateColumnName).cast(StringType), col(tempFormatterColumnName))
     )
 
-  private val customWeekOfYear = udf(
-    (ts: String, formatter: String) =>
-      Try {
-        getCustomFormatter(formatter) match {
-          case Some(customFormatter) =>
-            LocalDate
-              .parse(ts, customFormatter)
-              .get(ChronoField.ALIGNED_WEEK_OF_YEAR)
-          case None =>
-            LocalDate
-              .parse(ts, DateTimeFormatter.ofPattern(formatter))
-              .get(ChronoField.ALIGNED_WEEK_OF_YEAR)
-        }
-      } match {
-        case Failure(_)     => None
-        case Success(value) => value
-      },
-    IntegerType
+  private val customWeekOfYear: UserDefinedFunction = udf { (ts: String, formatter: String) =>
+    Try {
+      getCustomFormatter(formatter) match {
+        case Some(customFormatter) =>
+          LocalDate
+            .parse(ts, customFormatter)
+            .get(ChronoField.ALIGNED_WEEK_OF_YEAR)
+        case None =>
+          LocalDate
+            .parse(ts, DateTimeFormatter.ofPattern(formatter))
+            .get(ChronoField.ALIGNED_WEEK_OF_YEAR)
+      }
+    } match {
+      case Failure(_)     => DateComponentDerivation.DEFAULT_2DIGIT_VALUE
+      case Success(value) => value
+    }
+  }
+
+  private val customYear = udf((ts: String, formatter: String) =>
+    Try {
+      getCustomFormatter(formatter) match {
+        case Some(customFormatter) => LocalDate.parse(ts, customFormatter).get(ChronoField.YEAR)
+        case None                  => LocalDate.parse(ts, DateTimeFormatter.ofPattern(formatter)).getYear
+      }
+    } match {
+      case Failure(_)     => DateComponentDerivation.DEFAULT_4DIGIT_VALUE
+      case Success(value) => value
+    }
   )
 
-  private val customYear = udf(
-    (ts: String, formatter: String) =>
-      Try {
-        getCustomFormatter(formatter) match {
-          case Some(customFormatter) => LocalDate.parse(ts, customFormatter).get(ChronoField.YEAR)
-          case None                  => LocalDate.parse(ts, DateTimeFormatter.ofPattern(formatter)).getYear
-        }
-      } match {
-        case Failure(_)     => None
-        case Success(value) => value
-      },
-    IntegerType
+  private val customDay = udf((ts: String, formatter: String) =>
+    Try {
+      getCustomFormatter(formatter) match {
+        case Some(customFormatter) =>
+          val dayType =
+            if (formatter.contains("dd")) ChronoField.DAY_OF_MONTH else ChronoField.DAY_OF_WEEK
+          LocalDate.parse(ts, customFormatter).get(dayType)
+        case None => LocalDate.parse(ts, DateTimeFormatter.ofPattern(formatter)).getDayOfMonth
+      }
+    } match {
+      case Failure(_)     => DateComponentDerivation.DEFAULT_2DIGIT_VALUE
+      case Success(value) => value
+    }
   )
 
-  private val customDay = udf(
-    (ts: String, formatter: String) =>
-      Try {
-        getCustomFormatter(formatter) match {
-          case Some(customFormatter) =>
-            val day_type =
-              if (formatter.contains("dd")) ChronoField.DAY_OF_MONTH else ChronoField.DAY_OF_WEEK
-            LocalDate.parse(ts, customFormatter).get(day_type)
-          case None => LocalDate.parse(ts, DateTimeFormatter.ofPattern(formatter)).getDayOfMonth
-        }
-      } match {
-        case Failure(_)     => None
-        case Success(value) => value
-      },
-    IntegerType
-  )
-
-  private val customMonth = udf(
-    (ts: String, formatter: String) =>
-      Try {
-        getCustomFormatter(formatter) match {
-          case Some(customFormatter) => LocalDate.parse(ts, customFormatter).getMonthValue
-          case None                  => LocalDate.parse(ts, DateTimeFormatter.ofPattern(formatter)).getMonthValue
-        }
-      } match {
-        case Failure(_)     => None
-        case Success(value) => value
-      },
-    IntegerType
+  private val customMonth = udf((ts: String, formatter: String) =>
+    Try {
+      getCustomFormatter(formatter) match {
+        case Some(customFormatter) => LocalDate.parse(ts, customFormatter).getMonthValue
+        case None                  => LocalDate.parse(ts, DateTimeFormatter.ofPattern(formatter)).getMonthValue
+      }
+    } match {
+      case Failure(_)     => DateComponentDerivation.DEFAULT_2DIGIT_VALUE
+      case Success(value) => value
+    }
   )
 
   private def getCustomFormatter(dateFormatter: String): Option[DateTimeFormatter] =
     dateFormatter match {
-      case "yyyyww"     => Option(CustomDateFormatters.YEAR_WEEK)
-      case "yyyywwe"    => Option(CustomDateFormatters.YEAR_WEEK_DAY)
-      case "yyyyMM"     => Option(CustomDateFormatters.YEAR_MONTH)
-      case "MM/dd/yyyy" => Option(CustomDateFormatters.MONTH_DAY_YEAR)
-      case _            => None
+      case "yyyyww"              => Option(CustomDateFormatters.YEAR_WEEK)
+      case "yyyywwe"             => Option(CustomDateFormatters.YEAR_WEEK_DAY)
+      case "yyyyMM"              => Option(CustomDateFormatters.YEAR_MONTH)
+      case "MM/dd/yyyy"          => Option(CustomDateFormatters.MONTH_DAY_YEAR)
+      case "yyyy-MM-dd HH:mm:ss" => Option(CustomDateFormatters.YEAR_MONTH_DAY_WITH_TIME)
+      case _                     => None
     }
 
 }

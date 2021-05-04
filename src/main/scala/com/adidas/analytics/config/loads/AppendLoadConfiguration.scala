@@ -7,6 +7,7 @@ import com.adidas.analytics.util.{CatalogTableManager, LoadMode, OutputWriter}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.util.DropMalformedMode
 import org.apache.spark.sql.types.{DataType, StructType}
+
 import scala.util.parsing.json.JSONObject
 
 trait AppendLoadConfiguration
@@ -49,13 +50,22 @@ trait AppendLoadConfiguration
 
   private val targetDir: Option[String] = configReader.getAsOption[String]("target_dir")
 
+  private val writeLoadMode: LoadMode =
+    configReader.getAsOption[String]("write_load_mode") match {
+      case Some("AppendUnionPartitions") => LoadMode.AppendUnionPartitions
+      case None                          => LoadMode.OverwritePartitions
+    }
+
+  override protected val outputFilesNum: Option[Int] =
+    configReader.getAsOption[Int]("output_files_num")
+
   override protected val writer: OutputWriter.AtomicWriter = dataType match {
     case STRUCTURED if targetTable.isDefined =>
       OutputWriter.newTableLocationWriter(
         table = targetTable.get,
         format = ParquetFormat(Some(targetSchema)),
         targetPartitions = targetPartitions,
-        loadMode = LoadMode.OverwritePartitionsWithAddedColumns,
+        loadMode = writeLoadMode,
         metadataConfiguration = getMetaDataUpdateStrategy(targetTable.get, targetPartitions)
       )
     case SEMISTRUCTURED if targetDir.isDefined =>
@@ -63,7 +73,7 @@ trait AppendLoadConfiguration
         location = targetDir.get,
         format = ParquetFormat(Some(targetSchema)),
         targetPartitions = targetPartitions,
-        loadMode = LoadMode.OverwritePartitions
+        loadMode = writeLoadMode
       )
     case anotherDataType =>
       throw new RuntimeException(

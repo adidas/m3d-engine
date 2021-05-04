@@ -56,7 +56,7 @@ trait DataReshapingTask extends DataReshapingTaskConfig with DateComponentDeriva
       partitionSourceColumnFormat: String,
       targetPartitions: Seq[String]
   )(df: DataFrame): DataFrame =
-    if (targetPartitions.nonEmpty)
+    if (partitionSourceColumn.nonEmpty && targetPartitions.nonEmpty)
       df.transform(
         withDateComponents(partitionSourceColumn, partitionSourceColumnFormat, targetPartitions)
       )

@@ -4,24 +4,22 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.tools.{DistCp, DistCpOptions}
+
 import scala.collection.JavaConverters._
 
 class DistCpWrapper(conf: Configuration, sources: Seq[Path], target: Path) {
 
-  private val baseOptions = new DistCpOptions(sources.asJava, target)
-
   def run(mapsNum: Int = 10, atomic: Boolean = false, overwrite: Boolean = false): Job = {
-    val options = new DistCpOptions(baseOptions)
-    options.setAppend(false)
-    options.setBlocking(true)
-    options.setSyncFolder(false)
-    options.setDeleteMissing(false)
+    val baseOptions = new DistCpOptions.Builder(sources.asJava, target)
+      .withAppend(false)
+      .withBlocking(true)
+      .withSyncFolder(false)
+      .withDeleteMissing(false)
+      .maxMaps(mapsNum)
+      .withOverwrite(overwrite)
+      .withAtomicCommit(atomic)
 
-    options.setMaxMaps(mapsNum)
-    options.setOverwrite(overwrite)
-    options.setAtomicCommit(atomic)
-
-    new DistCp(conf, options).execute()
+    new DistCp(conf, baseOptions.build()).execute()
   }
 }
 

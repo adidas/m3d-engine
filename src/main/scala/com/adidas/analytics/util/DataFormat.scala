@@ -29,13 +29,15 @@ object DataFormat {
     }
   }
 
-  case class DSVFormat(optionalSchema: Option[StructType] = None) extends DataFormat {
+  case class DSVFormat(optionalSchema: Option[StructType] = None, multiLine: Boolean = false)
+      extends DataFormat {
 
     override def read(reader: DataFrameReader, locations: String*): DataFrame = {
       val filesString = locations.mkString(", ")
       logger.info(s"Reading DSV data from $filesString")
       optionalSchema
         .fold(reader.option("inferSchema", "true"))(schema => reader.schema(schema))
+        .option("multiline", multiLine)
         .csv(locations: _*)
     }
 

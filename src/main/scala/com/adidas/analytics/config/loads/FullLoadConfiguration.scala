@@ -39,9 +39,6 @@ trait FullLoadConfiguration
   protected val nextTableLocationPrefix: String =
     nextTableLocation.substring(nextTableLocation.lastIndexOf('/'))
 
-  protected val isMultilineJSON: Option[Boolean] =
-    configReader.getAsOption[Boolean]("is_multiline_json")
-
   protected val dropDateDerivedColumns: Boolean =
     configReader
       .getAsOption[Boolean]("drop_date_derived_columns")

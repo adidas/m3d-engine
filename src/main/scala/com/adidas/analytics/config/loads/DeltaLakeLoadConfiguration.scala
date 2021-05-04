@@ -64,16 +64,26 @@ trait DeltaLakeLoadConfiguration
     recordsToCondense.contains(row.getAs[String](recordModeColumnName))
   }
 
+  protected val initCondensation: Boolean =
+    configReader.getAsOption[Boolean]("init_condensation").getOrElse(true)
+
   protected val initCondensationWithRecordMode: Boolean =
     configReader.getAsOption[Boolean]("init_condensation_with_record_mode").getOrElse(true)
 
-  /* ignoreAffectedPartitionsMerge: covers the case where the partition key of the lake table can't
-   * be used to control the merge match conditions, because it is not constant per record, meaning
-   * it can change with time with the rest of the attributes of a record. It instructs the delta
-   * lake load algorithm to ignore the delta table partitions when merging the current with new
-   * data. */
-  protected val ignoreAffectedPartitionsMerge: Boolean =
-    configReader.getAsOption[Boolean]("ignore_affected_partitions_merge").getOrElse(true)
+  /* affectedPartitionsMerge: covers the case where the partition key of the lake table can't be
+   * used to control the merge match conditions, because it is not constant per record, meaning it
+   * can change with time with the rest of the attributes of a record. It instructs the delta lake
+   * load algorithm to consider, or not, the affected delta table partitions when merging the
+   * current with new data.
+   * Without AffectedPartitionsMerge:
+   * new.bk1 = hist.bk1 and new.bk2 = hist.bk2 and new.pc1 = hist.pc1 and new.pc2 = hist.pc2 With
+   * AffectedPartitionsMerge:
+   * new.bk1 = hist.bk1 and new.bk2 = hist.bk2 and (hist.pc1= 2018 and hist.pc2 = 10) and (hist.pc1=
+   * 2019 and hist.pc2 = 10)...
+   * BK = Business Key; PC = Partition Column; New - New Data in the merge; Hist - Historical data
+   * in delta table involved in the merge. */
+  protected val affectedPartitionsMerge: Boolean =
+    configReader.getAsOption[Boolean]("affected_partitions_merge").getOrElse(true)
 
   protected var affectedPartitions: Seq[PartitionCriteria] = _
 
@@ -113,9 +123,6 @@ trait DeltaLakeLoadConfiguration
   }
 
   // JSON Source properties
-  protected val isMultilineJSON: Option[Boolean] =
-    configReader.getAsOption[Boolean]("is_multiline_json")
-
   protected val readJsonSchema: Option[StructType] =
     configReader.getAsOption[JSONObject]("schema") match {
       case Some(value) => Some(DataType.fromJson(value.toString()).asInstanceOf[StructType])
@@ -131,10 +138,13 @@ trait DeltaLakeLoadConfiguration
       "spark.delta.logStore.class",
       "org.apache.spark.sql.delta.storage.S3SingleDriverLogStore"
     )
+    spark.conf.set(
+      "spark.sql.catalog.spark_catalog",
+      "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+    )
     spark.conf.set("spark.databricks.delta.schema.autoMerge.enabled", "true")
     spark.conf.set("spark.databricks.delta.retentionDurationCheck.enabled", "false")
     spark.conf.set("spark.delta.merge.repartitionBeforeWrite", "true")
-    spark.conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
     if (!isManualRepartitioning)
       spark.conf.set(
         "spark.sql.shuffle.partitions",
@@ -150,8 +160,9 @@ trait DeltaLakeLoadConfiguration
     logger.info(
       s"Repartition before write is ${spark.conf.get("spark.delta.merge.repartitionBeforeWrite")}"
     )
-    logger.info(s"Number of shuffle partitions: ${spark.conf.get("spark.sql.shuffle.partitions")}")
-    logger.info(s"Spark serializer: ${spark.conf.get("spark.serializer")}")
+    logger.info(
+      s"Number of shuffle partitions: ${spark.conf.getOption("spark.sql.shuffle.partitions")}"
+    )
   }
 
 }

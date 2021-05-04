@@ -260,6 +260,43 @@ class FullLoadTest extends AnyFeatureSpec with BaseAlgorithmTest {
       )
       fs.exists(targetPath20180110) shouldBe true
     }
+    Scenario("Loading data to table partitioned by multiple non-derived columns") {
+      val resourceDir = "partitioned_multi_columns"
+      copyResourceFileToHdfs(s"$resourceDir/$paramsFileName", paramsFileHdfsPath)
+
+      val targetSchema = DataType
+        .fromJson(getResourceAsText(s"$resourceDir/target_schema.json"))
+        .asInstanceOf[StructType]
+      val dataReader = FileReader.newDSVFileReader(Some(targetSchema))
+
+      val targetTable =
+        createPartitionedTargetTable(Seq("customer", "date"), targetSchema, tableName)
+      var targetPathTestPartition =
+        new Path(targetTable.location, "customer=customer5/date=20180110")
+      setupInitialState(targetTable, s"$resourceDir/lake_data_pre.psv", dataReader)
+      prepareDefaultSourceData("landing/new_data_multi_partition_columns.psv")
+
+      // checking pre-conditions
+      spark.read.csv(sourceDirPath.toString).count() shouldBe 25
+      targetTable.read().count() shouldBe 19
+      fs.exists(targetPathTestPartition) shouldBe false
+
+      // executing load
+      FullLoad(spark, dfs, paramsFileHdfsPath.toString).run()
+
+      // validating result
+      val expectedDataLocation =
+        resolveResource(s"$resourceDir/lake_data_post.psv", withProtocol = true)
+      val expectedDf = dataReader.read(spark, expectedDataLocation)
+      val actualDf = targetTable.read()
+      actualDf.hasDiff(expectedDf) shouldBe false
+
+      targetPathTestPartition = new Path(
+        CatalogTableManager(targetTable.table, spark).getTableLocation,
+        "customer=customer5/date=20180110"
+      )
+      fs.exists(targetPathTestPartition) shouldBe true
+    }
 
     Scenario(
       "Partitioned table is loaded and old leftovers are cleansed properly after successful load"

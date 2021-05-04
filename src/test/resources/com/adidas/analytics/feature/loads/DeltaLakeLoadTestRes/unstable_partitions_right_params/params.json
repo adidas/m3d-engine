@@ -11,6 +11,7 @@
     "item"
   ],
   "condensation_key": [
+    "m3d_timestamp",
     "actrequest_timestamp",
     "datapakid",
     "partno",
@@ -37,5 +38,5 @@
   ],
   "partition_column": "date",
   "partition_column_format": "yyyyMMdd",
-  "ignore_affected_partitions_merge": true
+  "affected_partitions_merge": true
 }

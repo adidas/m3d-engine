@@ -32,4 +32,19 @@ object CustomDateFormatters {
       .appendLiteral("/")
       .appendValue(ChronoField.YEAR, 4)
       .toFormatter
+
+  val YEAR_MONTH_DAY_WITH_TIME: DateTimeFormatter =
+    new DateTimeFormatterBuilder()
+      .appendValue(ChronoField.YEAR, 4)
+      .appendLiteral("-")
+      .appendValue(ChronoField.MONTH_OF_YEAR, 2)
+      .appendLiteral("-")
+      .appendValue(ChronoField.DAY_OF_MONTH, 2)
+      .appendLiteral(" ")
+      .appendValue(ChronoField.HOUR_OF_DAY, 2)
+      .appendLiteral(":")
+      .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+      .appendLiteral(":")
+      .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+      .toFormatter
 }

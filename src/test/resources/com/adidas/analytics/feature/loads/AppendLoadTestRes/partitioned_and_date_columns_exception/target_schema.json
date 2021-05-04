@@ -1,0 +1,45 @@
+{
+  "type" : "struct",
+  "fields" : [ {
+    "name" : "report_date",
+    "type" : "date",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "date1",
+    "type" : "date",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "date2",
+    "type" : "date",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "date3",
+    "type" : "date",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "customer",
+    "type" : "string",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "amount",
+    "type" : "integer",
+    "nullable" : true,
+    "metadata" : { }
+  }, {
+    "name" : "year",
+    "type" : "integer",
+    "nullable" : true,
+    "metadata" : { }
+  } , {
+    "name" : "week",
+    "type" : "integer",
+    "nullable" : true,
+    "metadata" : { }
+  }
+  ]
+}

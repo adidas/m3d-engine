@@ -25,9 +25,9 @@ final class FullLoad protected (
     try {
       val dataFormat: DataFormat = fileFormat match {
         case "parquet" => ParquetFormat(Some(targetSchema))
-        case "dsv"     => DSVFormat(Some(targetSchema))
+        case "dsv"     => DSVFormat(Some(targetSchema), isMultiline)
         case "json" =>
-          JSONFormat(multiLine = isMultilineJSON.getOrElse(false), optionalSchema = readJsonSchema)
+          JSONFormat(multiLine = isMultiline, optionalSchema = readJsonSchema)
         case _ => throw new RuntimeException(s"Unsupported input data format $fileFormat.")
       }
       Vector(dataFormat.read(spark.read.options(sparkReaderOptions), inputDir))
